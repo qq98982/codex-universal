@@ -26,9 +26,9 @@ if [ -n "${CODEX_ENV_PYTHON_VERSION}" ]; then
 fi
 
 if [ -n "${CODEX_ENV_NODE_VERSION}" ]; then
-    current=$(node -v | cut -d. -f1)   # ==> v20
+    current=$(node -v | sed 's/^v//')   # ==> 26.3.0
     echo "# Node.js: v${CODEX_ENV_NODE_VERSION} (default: ${current})"
-    if [ "${current}" != "v${CODEX_ENV_NODE_VERSION}" ]; then
+    if [ "${current}" != "${CODEX_ENV_NODE_VERSION}" ]; then
         nvm alias default "${CODEX_ENV_NODE_VERSION}"
         nvm use --save "${CODEX_ENV_NODE_VERSION}"
         corepack enable
@@ -63,7 +63,7 @@ if [ -n "${CODEX_ENV_GO_VERSION}" ]; then
 fi
 
 if [ -n "${CODEX_ENV_SWIFT_VERSION}" ]; then
-    current=$(swift --version | sed -n 's/^Swift version \([0-9]\+\.[0-9]\+\).*/\1/p')   # ==> 6.2
+    current=$(swift --version | sed -n 's/^Swift version \([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p')   # ==> 6.3.2
     echo "# Swift: ${CODEX_ENV_SWIFT_VERSION} (default: ${current})"
     if [ "${current}" != "${CODEX_ENV_SWIFT_VERSION}" ]; then
         swiftly use "${CODEX_ENV_SWIFT_VERSION}"
@@ -73,10 +73,10 @@ fi
 
 
 if [ -n "${CODEX_ENV_PHP_VERSION}" ]; then
-    current=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
+    current=$(php -r 'echo PHP_VERSION;')
     echo "# PHP: ${CODEX_ENV_PHP_VERSION} (default: ${current})"
     if [ "${current}" != "${CODEX_ENV_PHP_VERSION}" ]; then
-        phpenv global "${CODEX_ENV_PHP_VERSION}snapshot"
+        phpenv global "${CODEX_ENV_PHP_VERSION}"
         php --version
     fi
 fi

@@ -118,7 +118,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 ### PYTHON ###
 
-ARG PYTHON_VERSIONS="3.14 3.13 3.12 3.11 3.10"
+ARG PYTHON_VERSIONS="3.14.5"
 
 # Install pyenv
 ENV PYENV_ROOT=/root/.pyenv
@@ -154,8 +154,12 @@ ENV UV_NO_PROGRESS=1
 
 ### NODE ###
 
-ARG NVM_VERSION=v0.40.2
-ARG NODE_VERSION=22
+ARG NVM_VERSION=v0.40.5
+ARG NODE_VERSION=26.3.0
+ARG NPM_VERSION=11.16.0
+ARG COREPACK_VERSION=0.35.0
+ARG PNPM_VERSION=11.5.2
+ARG YARN_VERSION=1.22.22
 
 ENV NVM_DIR=/root/.nvm
 # Corepack tries to do too much - disable some of its features:
@@ -172,11 +176,13 @@ RUN --mount=type=cache,target=/root/.npm \
     && echo 'source $NVM_DIR/nvm.sh' >> /etc/profile \
     && echo "prettier\neslint\ntypescript" > $NVM_DIR/default-packages \
     && . $NVM_DIR/nvm.sh \
-    # The latest versions of npm aren't supported on node 18, so we install each set differently
-    && nvm install 18 && nvm use 18 && npm install -g npm@10.9 pnpm@10.12 && corepack enable && corepack install -g yarn \
-    && nvm install 20 && nvm use 20 && npm install -g npm@11.4 pnpm@10.12 && corepack enable && corepack install -g yarn \
-    && nvm install 22 && nvm use 22 && npm install -g npm@11.4 pnpm@10.12 && corepack enable && corepack install -g yarn \
-    && nvm install 24 && nvm use 24 && npm install -g npm@11.4 pnpm@10.12 && corepack enable && corepack install -g yarn \
+    && nvm install "$NODE_VERSION" \
+    && nvm use "$NODE_VERSION" \
+    && npm install -g "npm@${NPM_VERSION}" \
+    && npm install -g "corepack@${COREPACK_VERSION}" \
+    && corepack enable \
+    && corepack prepare "pnpm@${PNPM_VERSION}" --activate \
+    && corepack prepare "yarn@${YARN_VERSION}" --activate \
     && nvm alias default "$NODE_VERSION" \
     && nvm cache clear \
     && npm cache clean --force || true \
@@ -185,31 +191,27 @@ RUN --mount=type=cache,target=/root/.npm \
 
 ### BUN ###
 
-ARG BUN_VERSION=1.2.14
+ARG BUN_VERSION=1.3.14
 RUN --mount=type=cache,target=/root/.cache/mise \
     mise use --global "bun@${BUN_VERSION}" \
     && mise cache clear || true
 
 ### JAVA ###
 
-ARG GRADLE_VERSION=8.14
-ARG MAVEN_VERSION=3.9.10
-# OpenJDK 11 is not available for arm64. Codex Web only uses amd64 which
-# does support 11.
-ARG AMD_JAVA_VERSIONS="25 24 23 22 21 17 11"
-ARG ARM_JAVA_VERSIONS="25 24 23 22 21 17"
+ARG JAVA_VERSION=25
+ARG GRADLE_VERSION=9.5.1
+ARG MAVEN_VERSION=3.9.16
 
 RUN --mount=type=cache,target=/root/.cache/mise \
-    JAVA_VERSIONS="$( [ "$TARGETARCH" = "arm64" ] && echo "$ARM_JAVA_VERSIONS" || echo "$AMD_JAVA_VERSIONS" )" \
-    && for v in $JAVA_VERSIONS; do mise install "java@${v}"; done \
-    && mise use --global "java@${JAVA_VERSIONS%% *}" \
+    mise install "java@${JAVA_VERSION}" \
+    && mise use --global "java@${JAVA_VERSION}" \
     && mise use --global "gradle@${GRADLE_VERSION}" \
     && mise use --global "maven@${MAVEN_VERSION}" \
     && mise cache clear || true
 
 ### SWIFT ###
 
-ARG SWIFT_VERSIONS="6.2 6.1 5.10"
+ARG SWIFT_VERSIONS="6.3.2"
 ENV SWIFTLY_BIN_DIR=/root/.swiftly/bin
 ENV PATH=$SWIFTLY_BIN_DIR:$PATH
 
@@ -218,14 +220,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && curl -O https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz \
     && tar zxf swiftly-$(uname -m).tar.gz \
     && ./swiftly init --quiet-shell-followup \
-    && for v in $SWIFT_VERSIONS; do \
-         swiftly install "$v"; \
-       done \
+    && swiftly install "${SWIFT_VERSIONS%% *}" \
     && swiftly use "${SWIFT_VERSIONS%% *}"
 
 ### RUST ###
 
-ARG RUST_VERSIONS="1.95.0 1.94.0 1.93.0 1.92.0 1.91.1 1.90.0 1.89.0 1.88.0 1.87.0 1.86.0 1.85.1 1.84.1 1.83.0"
+ARG RUST_VERSIONS="1.96.0"
 RUN --mount=type=cache,target=/root/.cargo/registry \
     --mount=type=cache,target=/root/.cargo/git \
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none \
@@ -236,7 +236,7 @@ RUN --mount=type=cache,target=/root/.cargo/registry \
 
 ### RUBY ###
 
-ARG RUBY_VERSIONS="3.4.4 3.3.8 3.2.3"
+ARG RUBY_VERSIONS="4.0.5"
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=type=cache,target=/root/.cache/mise \
@@ -256,7 +256,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 ### BAZEL ###
 
-ARG BAZELISK_VERSION=v1.26.0
+ARG BAZELISK_VERSION=v1.29.0
 
 RUN curl -L --fail https://github.com/bazelbuild/bazelisk/releases/download/${BAZELISK_VERSION}/bazelisk-${TARGETOS}-${TARGETARCH} -o /usr/local/bin/bazelisk \
     && chmod +x /usr/local/bin/bazelisk \
@@ -264,8 +264,8 @@ RUN curl -L --fail https://github.com/bazelbuild/bazelisk/releases/download/${BA
 
 ### GO ###
 
-ARG GO_VERSIONS="1.25.1 1.24.3 1.23.8 1.22.12"
-ARG GOLANG_CI_LINT_VERSION=2.1.6
+ARG GO_VERSIONS="1.26.4"
+ARG GOLANG_CI_LINT_VERSION=2.12.2
 
 # Go defaults GOROOT to /usr/local/go - we just need to update PATH
 ENV PATH=/usr/local/go/bin:$HOME/go/bin:$PATH
@@ -277,7 +277,7 @@ RUN --mount=type=cache,target=/root/.cache/mise \
 
 ### PHP ###
 
-ARG PHP_VERSIONS="8.5 8.4 8.3 8.2"
+ARG PHP_VERSIONS="8.5.7"
 ENV PHPENV_ROOT=/root/.phpenv
 ENV PATH=/root/.phpenv/bin:/root/.phpenv/shims:$PATH
 
@@ -295,11 +295,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && echo 'eval "$(phpenv init - bash)"' >> /etc/profile \
     && bash -lc '\
         eval "$(phpenv init -)" && \
-        for v in $PHP_VERSIONS; do \
-            phpenv install -s "${v}snapshot"; \
-        done && \
+        phpenv install -s "${PHP_VERSIONS%% *}" && \
         phpenv rehash && \
-        phpenv global "${PHP_VERSIONS%% *}snapshot" \
+        phpenv global "${PHP_VERSIONS%% *}" \
     ' \
     && rm -rf /root/.phpenv/cache
 
@@ -309,11 +307,11 @@ RUN curl -sS https://getcomposer.org/installer | php \
 
 ### ELIXIR ###
 
-ARG ERLANG_VERSION=27.1.2
-ARG ELIXIR_VERSION=1.18.3
+ARG ERLANG_VERSION=28.5.0.1
+ARG ELIXIR_VERSION=1.20.0
 RUN --mount=type=cache,target=/root/.cache/mise \
-    mise install "erlang@${ERLANG_VERSION}" "elixir@${ELIXIR_VERSION}-otp-27" \
-    && mise use --global "erlang@${ERLANG_VERSION}" "elixir@${ELIXIR_VERSION}-otp-27" \
+    mise install "erlang@${ERLANG_VERSION}" "elixir@${ELIXIR_VERSION}-otp-28" \
+    && mise use --global "erlang@${ERLANG_VERSION}" "elixir@${ELIXIR_VERSION}-otp-28" \
     && mise cache clear || true
 
 ### SETUP SCRIPTS ###
@@ -321,18 +319,68 @@ RUN --mount=type=cache,target=/root/.cache/mise \
 COPY setup_universal.sh /opt/codex/setup_universal.sh
 RUN chmod +x /opt/codex/setup_universal.sh
 
+### AI CLIS ###
+
+ARG CLAUDE_CODE_VERSION=2.1.153
+ARG GEMINI_CLI_VERSION=0.45.2
+ARG CODEX_CLI_VERSION=0.137.0
+ARG CODEX_CLI_SHA256_AMD64=d96e88313b95597e9cbb8704f6db16dbb81c07142b08cfb628479ab433696931
+ARG CODEX_CLI_SHA256_ARM64=1b9cae96e27f5da2752054a5bba9204d486939ea60c65df4ba4a638458734bda
+
+ARG ANTIGRAVITY_CLI_VERSION=1.0.6
+ARG ANTIGRAVITY_CLI_URL_AMD64=https://storage.googleapis.com/antigravity-public/antigravity-cli/1.0.6-6458082025406464/linux-x64/cli_linux_x64.tar.gz
+ARG ANTIGRAVITY_CLI_SHA512_AMD64=1b57977be08398b0344ef5019089683c0aae9829545cdf3056c9a1d02b949ea98db6e643ef96ef4f6877654f4d48d5267035ef8a27652a8e023f65b91c06df76
+ARG ANTIGRAVITY_CLI_URL_ARM64=https://storage.googleapis.com/antigravity-public/antigravity-cli/1.0.6-6458082025406464/linux-arm/cli_linux_arm64.tar.gz
+ARG ANTIGRAVITY_CLI_SHA512_ARM64=f9967fa8c318c31f78bcc2f813c754e0e6f7bac8030144561d5b303155720da8ca0485eca4b6c814299170526a1e8cc9dc9ec2091fccc1e9bdb864ddb9610757
+
+RUN --mount=type=cache,target=/root/.npm \
+    set -e; \
+    . "$NVM_DIR/nvm.sh"; \
+    nvm use "$NODE_VERSION"; \
+    npm install -g \
+        "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
+        "@google/gemini-cli@${GEMINI_CLI_VERSION}"; \
+    npm cache clean --force || true; \
+    case "$TARGETARCH" in \
+      amd64) codex_arch="x86_64"; codex_sha256="$CODEX_CLI_SHA256_AMD64" ;; \
+      arm64) codex_arch="aarch64"; codex_sha256="$CODEX_CLI_SHA256_ARM64" ;; \
+      *) echo "Unsupported Codex CLI architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    codex_asset="codex-${codex_arch}-unknown-linux-musl"; \
+    codex_url="https://github.com/openai/codex/releases/download/rust-v${CODEX_CLI_VERSION}/${codex_asset}.tar.gz"; \
+    curl -fsSL "$codex_url" -o /tmp/codex.tar.gz; \
+    echo "${codex_sha256}  /tmp/codex.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/codex.tar.gz -C /tmp; \
+    install -m 0755 "/tmp/${codex_asset}" /usr/local/bin/codex; \
+    rm -f /tmp/codex.tar.gz "/tmp/${codex_asset}"; \
+    case "$TARGETARCH" in \
+      amd64) agy_url="$ANTIGRAVITY_CLI_URL_AMD64"; agy_sha512="$ANTIGRAVITY_CLI_SHA512_AMD64" ;; \
+      arm64) agy_url="$ANTIGRAVITY_CLI_URL_ARM64"; agy_sha512="$ANTIGRAVITY_CLI_SHA512_ARM64" ;; \
+      *) echo "Unsupported Antigravity CLI architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL "$agy_url" -o /tmp/antigravity.tar.gz; \
+    echo "${agy_sha512}  /tmp/antigravity.tar.gz" | sha512sum -c -; \
+    tar -xzf /tmp/antigravity.tar.gz -C /tmp antigravity; \
+    install -m 0755 /tmp/antigravity /usr/local/bin/agy; \
+    ln -sf /usr/local/bin/agy /usr/local/bin/antigravity; \
+    rm -f /tmp/antigravity.tar.gz /tmp/antigravity; \
+    codex --version; \
+    claude --version; \
+    gemini --version; \
+    test "$(agy --version)" = "$ANTIGRAVITY_CLI_VERSION"
+
 ### VERIFICATION SCRIPT ###
 
 COPY verify.sh /opt/verify.sh
 RUN chmod +x /opt/verify.sh \
     && PYTHON_VERSIONS="$PYTHON_VERSIONS" \
-        NODE_VERSIONS="24 22 20 18" \
+        NODE_VERSIONS="$NODE_VERSION" \
         RUST_VERSIONS="$RUST_VERSIONS" \
         GO_VERSIONS="$GO_VERSIONS" \
         SWIFT_VERSIONS="$SWIFT_VERSIONS" \
         RUBY_VERSIONS="$RUBY_VERSIONS" \
         PHP_VERSIONS="$PHP_VERSIONS" \
-        JAVA_VERSIONS="$( [ "$TARGETARCH" = "arm64" ] && echo "$ARM_JAVA_VERSIONS" || echo "$AMD_JAVA_VERSIONS" )" \
+        JAVA_VERSIONS="$JAVA_VERSION" \
         "/opt/verify.sh"
 
 ### ENTRYPOINT ###

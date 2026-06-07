@@ -1,73 +1,102 @@
 # codex-universal
 
-`codex-universal` is a reference implementation of the base Docker image available in [OpenAI Codex](http://platform.openai.com/docs/codex).
+`codex-universal` is a customized Docker image for Codex-style agent environments.
 
-This repository is intended to help developers cutomize environments in Codex, by providing a similar image that can be pulled and run locally. This is not an identical environment but should help for debugging and development.
-
-For more details on environment setup, see [OpenAI Codex](http://platform.openai.com/docs/codex).
-
-## Usage
-
-The Docker image is available at:
-
-```
-docker pull ghcr.io/openai/codex-universal:latest
-```
-
-This repository builds the image for both linux/amd64 and linux/arm64. However we only run the linux/amd64 version.
-Your installed Docker may support linux/amd64 emulation by passing the `--platform linux/amd64` flag.
-
-The arm64 image differs from the amd64 image in 2 ways:
-- OpenJDK 10 is not available on amd64
-- The arm64 image skips installing swift because of a current bug with mise
-
-The below script shows how can you approximate the `setup` environment in Codex:
+Two image variants are published:
 
 ```sh
-# See below for environment variable options.
-# This script mounts the current directory similar to how it would get cloned in.
-docker run --rm -it \
-    -e CODEX_ENV_PYTHON_VERSION=3.12 \
-    -e CODEX_ENV_NODE_VERSION=20 \
-    -e CODEX_ENV_RUST_VERSION=1.87.0 \
-    -e CODEX_ENV_GO_VERSION=1.23.8 \
-    -e CODEX_ENV_SWIFT_VERSION=6.2 \
-    -e CODEX_ENV_RUBY_VERSION=3.4.4 \
-    -e CODEX_ENV_PHP_VERSION=8.4 \
-    -v $(pwd):/workspace/$(basename $(pwd)) -w /workspace/$(basename $(pwd)) \
-    ghcr.io/openai/codex-universal:latest
+docker pull docker.io/gptbasesparticle/codex-universal:latest
+docker pull docker.io/gptbasesparticle/codex-universal:slim
 ```
 
-`codex-universal` includes setup scripts that look for `CODEX_ENV_*` environment variables and configures the language version accordingly.
+- `latest`: full development image with one stable version per language/runtime.
+- `slim`: AI agent toolbox for shell work, NAS/Synology files, disks, media files, documents, subtitles, encoding conversion, and search. It does not include full language SDKs such as Rust, Swift, PHP, Ruby, Go, Java, or Elixir.
 
-### Configuring language runtimes
+This repository can build both `linux/amd64` and `linux/arm64`, but the published/tested image is `linux/amd64`.
 
-The following environment variables can be set to configure runtime installation. Note that a limited subset of versions are supported (indicated in the table below):
+## Full Image
 
-| Environment variable       | Description                | Supported versions                               | Additional packages                                                  |
-| -------------------------- | -------------------------- | ------------------------------------------------ | -------------------------------------------------------------------- |
-| `CODEX_ENV_PYTHON_VERSION` | Python version to install  | `3.10`, `3.11.12`, `3.12`, `3.13`, `3.14.0`        | `pyenv`, `poetry`, `uv`, `ruff`, `black`, `mypy`, `pyright`, `isort` |
-| `CODEX_ENV_NODE_VERSION`   | Node.js version to install | `18`, `20`, `22`                                 | `corepack`, `yarn`, `pnpm`, `npm`                                    |
-| `CODEX_ENV_RUST_VERSION`   | Rust version to install    | `1.83.0`, `1.84.1`, `1.85.1`, `1.86.0`, `1.87.0`, `1.88.0`, `1.89.0`, `1.90`, `1.91.1`, `1.92.0`, `1.93.0`, `1.94.0`, `1.95.0` |                                                                      |
-| `CODEX_ENV_GO_VERSION`     | Go version to install      | `1.22.12`, `1.23.8`, `1.24.3`, `1.25.1`           |                                                                      |
-| `CODEX_ENV_SWIFT_VERSION`  | Swift version to install   | `5.10`, `6.1`, `6.2`                              |                                                                      |
-| `CODEX_ENV_RUBY_VERSION`   | Ruby version to install  | `3.2.3`, `3.3.8`, `3.4.4`                |                                                                      |
-| `CODEX_ENV_PHP_VERSION`   | PHP version to install  | `8.4`, `8.3`, `8.2`                |                                                                      |
-| `CODEX_ENV_JAVA_VERSION`   | JDK version to install  | `25`, `24`, `23`, `22`, `21`, `17`, `11`                |                                                                      |
+Run the full development image:
 
+```sh
+docker run --rm -it \
+    -e CODEX_ENV_PYTHON_VERSION=3.14.5 \
+    -e CODEX_ENV_NODE_VERSION=26.3.0 \
+    -e CODEX_ENV_RUST_VERSION=1.96.0 \
+    -e CODEX_ENV_GO_VERSION=1.26.4 \
+    -e CODEX_ENV_SWIFT_VERSION=6.3.2 \
+    -e CODEX_ENV_RUBY_VERSION=4.0.5 \
+    -e CODEX_ENV_PHP_VERSION=8.5.7 \
+    -e CODEX_ENV_JAVA_VERSION=25 \
+    -v "$(pwd):/workspace/$(basename "$(pwd)")" \
+    -w "/workspace/$(basename "$(pwd)")" \
+    docker.io/gptbasesparticle/codex-universal:latest
+```
 
+Supported full-image runtimes:
 
-## What's included
+| Environment variable | Version | Additional packages |
+| --- | --- | --- |
+| `CODEX_ENV_PYTHON_VERSION` | `3.14.5` | `pyenv`, `poetry`, `uv`, `ruff`, `black`, `mypy`, `pyright`, `isort`, `pytest` |
+| `CODEX_ENV_NODE_VERSION` | `26.3.0` | `npm`, `corepack`, `pnpm`, `yarn`, `prettier`, `eslint`, `typescript` |
+| `CODEX_ENV_RUST_VERSION` | `1.96.0` | `rustfmt`, `clippy` |
+| `CODEX_ENV_GO_VERSION` | `1.26.4` | `golangci-lint` |
+| `CODEX_ENV_SWIFT_VERSION` | `6.3.2` | |
+| `CODEX_ENV_RUBY_VERSION` | `4.0.5` | |
+| `CODEX_ENV_PHP_VERSION` | `8.5.7` | `composer` |
+| `CODEX_ENV_JAVA_VERSION` | `25` | `gradle`, `maven` |
 
-In addition to the packages specified in the table above, the following packages are also installed:
+## Slim Image
 
-- `bun`: 1.2.10
-- `bazelisk` / `bazel`
-- `erlang`: 27.1.2
-- `elixir`: 1.18.3
+Run the slim AI agent toolbox against a mounted NAS/media/document directory:
 
-See [Dockerfile](Dockerfile) for the full details of installed packages.
+```sh
+docker run --rm -it \
+    -v "/path/to/files:/data" \
+    -w /data \
+    docker.io/gptbasesparticle/codex-universal:slim
+```
 
-## Contributing
+For real disk inspection commands such as `smartctl`, `hdparm`, `parted`, `sgdisk`, or `testdisk`, run with explicit device access:
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+```sh
+docker run --rm -it --privileged \
+    -v "/dev:/dev" \
+    -v "/path/to/files:/data" \
+    -w /data \
+    docker.io/gptbasesparticle/codex-universal:slim
+```
+
+The slim image includes the AI CLIs plus tools for:
+
+- AI agents: `codex`, `claude`, `gemini`, `agy`
+- Search and inspection: `rg`, `rga`, `fd`, `fzf`, `plocate`, `tree`, `file`, `bat`, `delta`
+- NAS and sync: `rclone`, `rsync`, `smbclient`, `cifs-utils`, `nfs-common`
+- Disk and duplicate cleanup: `smartctl`, `hdparm`, `parted`, `sgdisk`, `testdisk`, `ncdu`, `duf`, `czkawka_cli`, `jdupes`, `fdupes`, `rdfind`, `rmlint`, `duperemove`
+- Media: `ffmpeg`, `ffprobe`, `mediainfo`, `mkvtoolnix`, `exiftool`, `imagemagick`, `webp`, `avifenc`, `heif-convert`
+- Music: `flac`, `metaflac`, `id3v2`, `eyeD3`, `kid3-cli`, `mp3val`, `AtomicParsley`, `sox`
+- Subtitles: `ffsubsync`, `subliminal`, `srt-*`, `mkvextract`, `mkvmerge`
+- Documents and OCR: `pandoc`, `pdftotext`, `pdfinfo`, `ocrmypdf`, `tesseract` with English, Simplified Chinese, Traditional Chinese, and Japanese language data
+- Encoding conversion: `iconv`, `uchardet`, `enca`, `nkf`, `dos2unix`, `convmv`, `detox`, `recode`
+
+LibreOffice is intentionally not installed in `slim`.
+
+## AI CLI Headless Commands
+
+These commands run non-GUI agent CLIs and bypass approval prompts. Use them only inside a container or another sandbox you trust:
+
+```sh
+codex exec --dangerously-bypass-approvals-and-sandbox "inspect this directory and summarize it"
+claude -p --dangerously-skip-permissions "inspect this directory and summarize it"
+gemini -p "inspect this directory and summarize it" -y
+agy --print "inspect this directory and summarize it" --dangerously-skip-permissions
+```
+
+## Build
+
+```sh
+docker build --platform linux/amd64 -t docker.io/gptbasesparticle/codex-universal:latest .
+docker build --platform linux/amd64 -f Dockerfile.slim -t docker.io/gptbasesparticle/codex-universal:slim .
+```
+
+See [Dockerfile](Dockerfile) and [Dockerfile.slim](Dockerfile.slim) for exact package versions.

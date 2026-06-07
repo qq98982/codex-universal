@@ -1,0 +1,311 @@
+# syntax=docker/dockerfile:1.7
+FROM ubuntu:24.04
+
+ARG TARGETOS
+ARG TARGETARCH
+
+ENV LANG="C.UTF-8"
+ENV LC_ALL="C.UTF-8"
+ENV HOME=/root
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PIPX_BIN_DIR=/usr/local/bin
+ENV PIPX_HOME=/opt/pipx
+ENV UV_NO_PROGRESS=1
+ENV PATH=/root/.local/bin:/usr/local/bin:$PATH
+
+### AI AGENT, NAS, MEDIA, DOCUMENT, AND SEARCH TOOLS ###
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update \
+    && apt-get install -y --no-install-recommends \
+        7zip=23.01+dfsg-11 \
+        antiword=0.37-* \
+        atomicparsley=20210715.151551.e7ad03a-1 \
+        bat=0.24.* \
+        bc=1.07.* \
+        beets=1.6.* \
+        btop=1.3.* \
+        ca-certificates=20240203 \
+        catdoc=1:0.95-* \
+        cifs-utils=2:7.0-* \
+        convmv=2.05-* \
+        curl=8.5.* \
+        csvkit=1.4.* \
+        detox=1.4.* \
+        diffutils=1:3.10-* \
+        dnsutils=1:9.18.* \
+        dos2unix=7.5.* \
+        duf=0.8.* \
+        duperemove=0.11.* \
+        enca=1.19-* \
+        exfatprogs=1.2.* \
+        exiv2=0.27.* \
+        eza=0.18.* \
+        eyed3=0.9.* \
+        fd-find=9.0.* \
+        ffmpeg=7:6.1.* \
+        file=1:5.45-* \
+        flac=1.4.* \
+        fdupes=1:2.3.* \
+        fzf=0.44.* \
+        gawk=1:5.2.* \
+        gdisk=1.0.* \
+        gh=2.45.* \
+        gifsicle=1.94-* \
+        git=1:2.43.* \
+        git-delta=0.16.* \
+        git-lfs=3.4.* \
+        gnupg=2.4.* \
+        hdparm=9.65* \
+        htop=3.3.* \
+        httpie=3.2.* \
+        imagemagick=8:6.9.* \
+        iproute2=6.1.* \
+        iputils-ping=3:20240117-* \
+        id3v2=0.1.* \
+        jdupes=1.27.* \
+        jhead=1:3.08-* \
+        jpegoptim=1.4.* \
+        jq=1.7.* \
+        kid3-cli=3.9.* \
+        less=590-* \
+        libatomic1=14.* \
+        libavif-bin=1.0.* \
+        libheif-examples=1.17.* \
+        libimage-exiftool-perl=12.76* \
+        libsox-fmt-all=14.4.* \
+        libsubtitles-perl=1.04-* \
+        lsof=4.95.* \
+        make=4.3-* \
+        mediainfo=24.01.* \
+        mkvtoolnix=82.0-* \
+        moreutils=0.69-* \
+        mp3val=0.1.* \
+        nano=7.2-* \
+        ncdu=1.19-* \
+        netcat-openbsd=1.226-* \
+        nfs-common=1:2.6.* \
+        nkf=1:2.1.* \
+        normalize-audio=0.7.* \
+        ntfs-3g=1:2022.10.* \
+        ocrmypdf=15.2.* \
+        odt2txt=0.5-* \
+        openssh-client=1:9.6p1-* \
+        openssl=3.0.* \
+        optipng=0.7.* \
+        opus-tools=0.2-* \
+        pandoc=3.1.* \
+        parallel=20231122+ds-1 \
+        parted=3.6-* \
+        patch=2.7.* \
+        pipx=1.4.* \
+        plocate=1.1.* \
+        pngquant=2.18.* \
+        poppler-utils=24.02.* \
+        procps=2:4.0.* \
+        progress=0.17-* \
+        psmisc=23.7-* \
+        pv=1.8.* \
+        python-is-python3=3.11.* \
+        python3=3.12.* \
+        python3-chardet=5.2.* \
+        python3-charset-normalizer=3.3.* \
+        python3-magic=2:0.4.* \
+        python3-pip=24.0* \
+        python3-srt=3.5.* \
+        python3-venv=3.12.* \
+        rclone=1.60.* \
+        rdfind=1.6.* \
+        recode=3.6-* \
+        rename=2.02-* \
+        ripgrep=14.1.* \
+        rmlint=2.9.* \
+        rsync=3.2.* \
+        shellcheck=0.9.* \
+        shfmt=3.8.* \
+        shntool=3.0.* \
+        smartmontools=7.4-* \
+        smbclient=2:4.19.* \
+        socat=1.8.* \
+        sox=14.4.* \
+        sqlite3=3.45.* \
+        strace=6.8-* \
+        subliminal=2.1.* \
+        sudo=1.9.* \
+        telnet=0.17+2.5-* \
+        tesseract-ocr=5.3.* \
+        tesseract-ocr-chi-sim=1:4.1.* \
+        tesseract-ocr-chi-tra=1:4.1.* \
+        tesseract-ocr-eng=1:4.1.* \
+        tesseract-ocr-jpn=1:4.1.* \
+        testdisk=7.1-* \
+        time=1.9-* \
+        tmux=3.4-* \
+        trash-cli=0.23.* \
+        tree=2.1.* \
+        uchardet=0.0.* \
+        unar=1.10.* \
+        unrtf=0.21.* \
+        unzip=6.0-* \
+        vim-tiny=2:9.1.* \
+        vorbis-tools=1.4.* \
+        webp=1.3.* \
+        wget=1.21.* \
+        whois=5.5.* \
+        xlsx2csv=1:0.7.* \
+        xxd=2:9.1.* \
+        xz-utils=5.6.* \
+        yq=3.1.* \
+        zip=3.0-* \
+        zoxide=0.9.* \
+    && ln -sf /usr/bin/fdfind /usr/local/bin/fd \
+    && ln -sf /usr/bin/batcat /usr/local/bin/bat \
+    && ln -sf /usr/bin/vim.tiny /usr/local/bin/vim \
+    && ln -sf /usr/bin/7z /usr/local/bin/7zz \
+    && rm -rf /var/lib/apt/lists/*
+
+### PYTHON CLI HELPERS ###
+
+ARG UV_VERSION=0.7.22
+ARG FFSUBSYNC_VERSION=0.4.32
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=cache,target=/root/.cache/pipx \
+    python3 -m pip install --break-system-packages --no-cache-dir --no-compile "uv==${UV_VERSION}" \
+    && pipx install --pip-args="--no-cache-dir --no-compile --root-user-action=ignore" "ffsubsync==${FFSUBSYNC_VERSION}" \
+    && uv --version \
+    && ffsubsync --version
+
+### NODE ###
+
+ARG NODE_VERSION=26.3.0
+ARG NPM_VERSION=11.16.0
+
+RUN --mount=type=cache,target=/root/.npm \
+    set -e; \
+    case "$TARGETARCH" in \
+      amd64) node_arch="x64" ;; \
+      arm64) node_arch="arm64" ;; \
+      *) echo "Unsupported Node.js architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    node_asset="node-v${NODE_VERSION}-linux-${node_arch}"; \
+    curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/${node_asset}.tar.xz" -o /tmp/node.tar.xz; \
+    tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1; \
+    rm -f /tmp/node.tar.xz; \
+    npm install -g "npm@${NPM_VERSION}"; \
+    npm cache clean --force || true; \
+    node --version; \
+    npm --version
+
+### RELEASED FILE TOOL BINARIES ###
+
+ARG CZKAWKA_VERSION=11.0.1
+ARG CZKAWKA_SHA256_AMD64=2f81d63f79047294629253f4232c47cf5a2c6e55b9e34f23d11c2c810cfcbc09
+ARG CZKAWKA_SHA256_ARM64=eb333e3b29d576db6d2365cd9deff454cfc9e7bc9b8b6dfefb4ab82b14db7dc8
+
+ARG RGA_VERSION=0.10.10
+ARG RGA_SHA256_AMD64=a969c25b182ac84aa672518313b5f741091decf7d93d03a020bcfe517b9ff4e8
+ARG RGA_SHA256_ARM64=2cd875ab6c78b27e4830b5bca92c570a8a8dcfb368bc71b189b65ac01fbc3020
+
+RUN set -e; \
+    case "$TARGETARCH" in \
+      amd64) czkawka_asset="linux_czkawka_cli_x86_64"; czkawka_sha256="$CZKAWKA_SHA256_AMD64" ;; \
+      arm64) czkawka_asset="linux_czkawka_cli_arm64"; czkawka_sha256="$CZKAWKA_SHA256_ARM64" ;; \
+      *) echo "Unsupported Czkawka architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL "https://github.com/qarmin/czkawka/releases/download/${CZKAWKA_VERSION}/${czkawka_asset}" -o /tmp/czkawka_cli; \
+    echo "${czkawka_sha256}  /tmp/czkawka_cli" | sha256sum -c -; \
+    install -m 0755 /tmp/czkawka_cli /usr/local/bin/czkawka_cli; \
+    ln -sf /usr/local/bin/czkawka_cli /usr/local/bin/czkawka; \
+    rm -f /tmp/czkawka_cli; \
+    case "$TARGETARCH" in \
+      amd64) rga_target="x86_64-unknown-linux-musl"; rga_sha256="$RGA_SHA256_AMD64" ;; \
+      arm64) rga_target="aarch64-unknown-linux-gnu"; rga_sha256="$RGA_SHA256_ARM64" ;; \
+      *) echo "Unsupported ripgrep-all architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    rga_dir="ripgrep_all-v${RGA_VERSION}-${rga_target}"; \
+    curl -fsSL "https://github.com/phiresky/ripgrep-all/releases/download/v${RGA_VERSION}/${rga_dir}.tar.gz" -o /tmp/rga.tar.gz; \
+    echo "${rga_sha256}  /tmp/rga.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/rga.tar.gz -C /tmp; \
+    install -m 0755 "/tmp/${rga_dir}/rga" /usr/local/bin/rga; \
+    install -m 0755 "/tmp/${rga_dir}/rga-preproc" /usr/local/bin/rga-preproc; \
+    install -m 0755 "/tmp/${rga_dir}/rga-fzf" /usr/local/bin/rga-fzf; \
+    install -m 0755 "/tmp/${rga_dir}/rga-fzf-open" /usr/local/bin/rga-fzf-open; \
+    rm -rf /tmp/rga.tar.gz "/tmp/${rga_dir}"; \
+    czkawka --version; \
+    rga --version
+
+### SETUP SCRIPTS ###
+
+COPY setup_slim.sh /opt/codex/setup_slim.sh
+RUN chmod +x /opt/codex/setup_slim.sh
+
+### AI CLIS ###
+
+ARG CLAUDE_CODE_VERSION=2.1.153
+ARG GEMINI_CLI_VERSION=0.45.2
+ARG CODEX_CLI_VERSION=0.137.0
+ARG CODEX_CLI_SHA256_AMD64=d96e88313b95597e9cbb8704f6db16dbb81c07142b08cfb628479ab433696931
+ARG CODEX_CLI_SHA256_ARM64=1b9cae96e27f5da2752054a5bba9204d486939ea60c65df4ba4a638458734bda
+
+ARG ANTIGRAVITY_CLI_VERSION=1.0.6
+ARG ANTIGRAVITY_CLI_URL_AMD64=https://storage.googleapis.com/antigravity-public/antigravity-cli/1.0.6-6458082025406464/linux-x64/cli_linux_x64.tar.gz
+ARG ANTIGRAVITY_CLI_SHA512_AMD64=1b57977be08398b0344ef5019089683c0aae9829545cdf3056c9a1d02b949ea98db6e643ef96ef4f6877654f4d48d5267035ef8a27652a8e023f65b91c06df76
+ARG ANTIGRAVITY_CLI_URL_ARM64=https://storage.googleapis.com/antigravity-public/antigravity-cli/1.0.6-6458082025406464/linux-arm/cli_linux_arm64.tar.gz
+ARG ANTIGRAVITY_CLI_SHA512_ARM64=f9967fa8c318c31f78bcc2f813c754e0e6f7bac8030144561d5b303155720da8ca0485eca4b6c814299170526a1e8cc9dc9ec2091fccc1e9bdb864ddb9610757
+
+RUN --mount=type=cache,target=/root/.npm \
+    --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    set -e; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        g++=4:13.2.* \
+        pkg-config=1.8.*; \
+    npm install -g \
+        "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
+        "@google/gemini-cli@${GEMINI_CLI_VERSION}"; \
+    npm cache clean --force || true; \
+    apt-get purge -y --auto-remove g++ pkg-config; \
+    rm -rf /var/lib/apt/lists/*; \
+    case "$TARGETARCH" in \
+      amd64) codex_arch="x86_64"; codex_sha256="$CODEX_CLI_SHA256_AMD64" ;; \
+      arm64) codex_arch="aarch64"; codex_sha256="$CODEX_CLI_SHA256_ARM64" ;; \
+      *) echo "Unsupported Codex CLI architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    codex_asset="codex-${codex_arch}-unknown-linux-musl"; \
+    codex_url="https://github.com/openai/codex/releases/download/rust-v${CODEX_CLI_VERSION}/${codex_asset}.tar.gz"; \
+    curl -fsSL "$codex_url" -o /tmp/codex.tar.gz; \
+    echo "${codex_sha256}  /tmp/codex.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/codex.tar.gz -C /tmp; \
+    install -m 0755 "/tmp/${codex_asset}" /usr/local/bin/codex; \
+    rm -f /tmp/codex.tar.gz "/tmp/${codex_asset}"; \
+    case "$TARGETARCH" in \
+      amd64) agy_url="$ANTIGRAVITY_CLI_URL_AMD64"; agy_sha512="$ANTIGRAVITY_CLI_SHA512_AMD64" ;; \
+      arm64) agy_url="$ANTIGRAVITY_CLI_URL_ARM64"; agy_sha512="$ANTIGRAVITY_CLI_SHA512_ARM64" ;; \
+      *) echo "Unsupported Antigravity CLI architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL "$agy_url" -o /tmp/antigravity.tar.gz; \
+    echo "${agy_sha512}  /tmp/antigravity.tar.gz" | sha512sum -c -; \
+    tar -xzf /tmp/antigravity.tar.gz -C /tmp antigravity; \
+    install -m 0755 /tmp/antigravity /usr/local/bin/agy; \
+    ln -sf /usr/local/bin/agy /usr/local/bin/antigravity; \
+    rm -f /tmp/antigravity.tar.gz /tmp/antigravity; \
+    codex --version; \
+    claude --version; \
+    gemini --version; \
+    test "$(agy --version)" = "$ANTIGRAVITY_CLI_VERSION"
+
+### VERIFICATION SCRIPT ###
+
+COPY verify_slim.sh /opt/verify_slim.sh
+RUN chmod +x /opt/verify_slim.sh \
+    && "/opt/verify_slim.sh"
+
+### ENTRYPOINT ###
+
+COPY entrypoint_slim.sh /opt/entrypoint.sh
+RUN chmod +x /opt/entrypoint.sh
+
+ENTRYPOINT ["/opt/entrypoint.sh"]

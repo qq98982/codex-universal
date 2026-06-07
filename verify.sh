@@ -50,6 +50,10 @@ node --version
 npm --version
 pnpm --version
 yarn --version
+codex --version
+claude --version
+gemini --version
+agy --version
 npm ls -g
 
 echo "- Bun:"

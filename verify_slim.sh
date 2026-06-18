@@ -76,7 +76,10 @@ echo "- Media, subtitle, and image tools:"
 need ffmpeg ffprobe mediainfo mkvmerge mkvextract exiftool identify convert cwebp \
   dwebp avifenc avifdec heif-convert jpegoptim optipng pngquant gifsicle flac \
   metaflac id3v2 mp3val AtomicParsley sox eyeD3 kid3-cli subliminal \
-  srt-normalise srt-fixed-timeshift srt-linear-timeshift srt-process
+  srt-normalise srt-fixed-timeshift srt-linear-timeshift srt-process ffsubsync \
+  ccextractor sacd_extract shnsplit cuetag cuebreakpoints cueprint cueconvert \
+  bchunk wavpack wvunpack mp3splt mp3gain lame twolame faad mpcdec mpcenc \
+  MP4Box dvdbackup lsdvd vobcopy abcde cdparanoia rsgain vorbisgain
 ffmpeg -version | head -n 1
 ffprobe -version | head -n 1
 mediainfo --Version
@@ -97,6 +100,41 @@ mp3val 2>&1 | head -n 1
 AtomicParsley -v 2>&1 | head -n 1
 sox --version
 subliminal --version
+ffsubsync --version
+ccextractor --version 2>&1 | head -n 1 || true
+sacd_extract --help | head -n 1
+shnsplit -v 2>&1 | head -n 1
+cuetag 2>&1 | head -n 1
+cueprint --version | head -n 1
+wavpack --version | head -n 1
+mp3splt -v | head -n 1
+mp3gain -v 2>&1 | head -n 1
+lame --version | head -n 1
+twolame --help 2>&1 | head -n 1 || true
+faad --help 2>&1 | head -n 1 || true
+mpcdec -h 2>&1 | head -n 1
+MP4Box -version > /tmp/mp4box-version.out 2>&1
+head -n 2 /tmp/mp4box-version.out
+rm -f /tmp/mp4box-version.out
+rm -rf /root/.gpac
+dvdbackup --version | head -n 1
+lsdvd --version 2>&1 | head -n 1 || true
+vobcopy -v 2>&1 | head -n 1 || true
+abcde -v | head -n 1
+cdparanoia -V 2>&1 | head -n 1 || true
+rsgain --version | head -n 1
+vorbisgain --version | head -n 1
+
+echo "- Database clients:"
+need psql mysql redis-cli mongosh duckdb usql clickhouse clickhouse-client clickhouse-local
+psql --version
+mysql --version
+redis-cli --version
+mongosh --version
+duckdb --version
+usql --version
+clickhouse client --version
+clickhouse local --version
 
 echo "- Documents, OCR, and encoding tools:"
 need pandoc pdftotext pdfinfo tesseract ocrmypdf antiword catdoc odt2txt unrtf \
@@ -106,7 +144,7 @@ pdftotext -v 2>&1 | head -n 1
 pdfinfo -v 2>&1 | head -n 1
 tesseract --version | head -n 1
 ocrmypdf --version
-antiword -h 2>&1 | head -n 1
+antiword -h 2>&1 | head -n 1 || true
 catdoc -V 2>&1 | head -n 1
 odt2txt --version
 unrtf --version | head -n 1

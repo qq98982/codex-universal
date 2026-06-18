@@ -314,6 +314,122 @@ RUN --mount=type=cache,target=/root/.cache/mise \
     && mise use --global "erlang@${ERLANG_VERSION}" "elixir@${ELIXIR_VERSION}-otp-28" \
     && mise cache clear || true
 
+### DATABASE, AUDIO, VIDEO, AND SUBTITLE CLIS ###
+
+ARG MONGOSH_VERSION=2.8.3
+
+ARG DUCKDB_VERSION=1.5.4
+ARG DUCKDB_SHA256_AMD64=c1d6db2294895c97849bee574b21eb462528857ccf8a23617dd3e0a05dd4b770
+ARG DUCKDB_SHA256_ARM64=32fea57520b1ae6caa291717d5f5d4d478fb6f8ed2d2c7054096a038fc6be833
+
+ARG USQL_VERSION=0.21.4
+ARG USQL_SHA256_AMD64=93537a7239737b3d0cd2f42b7a13766a455a40176be7c0896a3586cd698cf751
+ARG USQL_SHA256_ARM64=69cce9f81d95a855260437567453376e08539ca412305818d08cc4e17b9a42cb
+
+ARG CLICKHOUSE_VERSION=26.4.4.38
+ARG CLICKHOUSE_COMMON_SHA512_AMD64=d430fdb0e7e7b5ca50ff38f7b5402488fe5179bff4817f2170c3cbad5eaf172b03bf2121d0c38b800ed6615106aea422503438a294e66aeab4d3d31fea16992b
+ARG CLICKHOUSE_COMMON_SHA512_ARM64=7f8ee539dca74418fa30784c1e454f11304b7b25e1b7d0ad33d2fec7b2baa3f9f646521b20f2b79485dbc5d0fb1f6f5919597cf52494168350eae050927cfbf5
+ARG CLICKHOUSE_CLIENT_SHA512_AMD64=3cc877dd2e31c61560805f08ab29bfe2d2749ef38d351ec4dd7ef61f01eab97c22e98598d57f79651ecde1f83bc1fbe4c524a24ca055467abc9cebe1930f21f4
+ARG CLICKHOUSE_CLIENT_SHA512_ARM64=dcbf481cac4380bd9d9a367251eae5b570e206f013cba84444ce8893461c3d94ba0555d045b73a9757c95aab536939afe457a126f5b46e410a06c7412af83308
+
+ARG SACD_RIPPER_COMMIT=a3d981c935c3224217e2842cd492f9351106c81e
+ARG SACD_RIPPER_SHA256=db903b03d28a03282020a76bc7b6e146bb51969ddcac2bc855096b5363379677
+ARG FFSUBSYNC_VERSION=0.4.32
+
+RUN --mount=type=cache,target=/root/.npm \
+    --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    --mount=type=cache,target=/root/.cache/pipx \
+    set -e; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        abcde=2.9.* \
+        atomicparsley=20210715.151551.e7ad03a-1 \
+        bchunk=1.2.* \
+        bzip2=1.0.* \
+        ccextractor=0.94* \
+        cdparanoia=3.10.* \
+        cuetools=1.4.* \
+        default-mysql-client=1.1.* \
+        dvdbackup=0.4.* \
+        faad=2.11.* \
+        ffmpeg=7:6.1.* \
+        flac=1.4.* \
+        gpac=2.2.* \
+        id3v2=0.1.* \
+        lame=3.100-* \
+        libsox-fmt-all=14.4.* \
+        libxml2=2.9.* \
+        lsdvd=0.17-* \
+        mediainfo=24.01.* \
+        mkvtoolnix=82.0-* \
+        mp3gain=1.6.* \
+        mp3splt=2.6.* \
+        mp3val=0.1.* \
+        musepack-tools=2:0.1* \
+        normalize-audio=0.7.* \
+        opus-tools=0.2-* \
+        postgresql-client=16+257build1* \
+        python3-srt=3.5.* \
+        redis-tools=5:7.0.* \
+        rsgain=3.4-* \
+        shntool=3.0.* \
+        sox=14.4.* \
+        subliminal=2.1.* \
+        twolame=0.4.* \
+        vobcopy=1.2.* \
+        vorbis-tools=1.4.* \
+        vorbisgain=0.37-* \
+        wavpack=5.6.*; \
+    . "$NVM_DIR/nvm.sh"; \
+    nvm use "$NODE_VERSION"; \
+    npm install -g "mongosh@${MONGOSH_VERSION}"; \
+    npm cache clean --force || true; \
+    pipx install --pip-args="--no-cache-dir --no-compile --root-user-action=ignore" "ffsubsync==${FFSUBSYNC_VERSION}"; \
+    curl -fsSL "https://github.com/sacd-ripper/sacd-ripper/archive/${SACD_RIPPER_COMMIT}.tar.gz" -o /tmp/sacd-ripper.tar.gz; \
+    echo "${SACD_RIPPER_SHA256}  /tmp/sacd-ripper.tar.gz" | sha256sum -c -; \
+    mkdir -p /tmp/sacd-ripper; \
+    tar -xzf /tmp/sacd-ripper.tar.gz -C /tmp/sacd-ripper --strip-components=1; \
+    cmake -S /tmp/sacd-ripper/tools/sacd_extract -B /tmp/sacd-build -DCMAKE_BUILD_TYPE=Release; \
+    cmake --build /tmp/sacd-build -j"$(nproc)"; \
+    install -m 0755 /tmp/sacd-build/sacd_extract /usr/local/bin/sacd_extract; \
+    rm -rf /tmp/sacd-ripper /tmp/sacd-build /tmp/sacd-ripper.tar.gz /var/lib/apt/lists/*; \
+    case "$TARGETARCH" in \
+      amd64) duckdb_arch="amd64"; duckdb_sha256="$DUCKDB_SHA256_AMD64"; usql_arch="amd64"; usql_sha256="$USQL_SHA256_AMD64"; clickhouse_arch="amd64"; clickhouse_common_sha512="$CLICKHOUSE_COMMON_SHA512_AMD64"; clickhouse_client_sha512="$CLICKHOUSE_CLIENT_SHA512_AMD64" ;; \
+      arm64) duckdb_arch="arm64"; duckdb_sha256="$DUCKDB_SHA256_ARM64"; usql_arch="arm64"; usql_sha256="$USQL_SHA256_ARM64"; clickhouse_arch="arm64"; clickhouse_common_sha512="$CLICKHOUSE_COMMON_SHA512_ARM64"; clickhouse_client_sha512="$CLICKHOUSE_CLIENT_SHA512_ARM64" ;; \
+      *) echo "Unsupported database/media CLI architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL "https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/duckdb_cli-linux-${duckdb_arch}.gz" -o /tmp/duckdb.gz; \
+    echo "${duckdb_sha256}  /tmp/duckdb.gz" | sha256sum -c -; \
+    gunzip -c /tmp/duckdb.gz > /usr/local/bin/duckdb; \
+    chmod 0755 /usr/local/bin/duckdb; \
+    rm -f /tmp/duckdb.gz; \
+    curl -fsSL "https://github.com/xo/usql/releases/download/v${USQL_VERSION}/usql_static-${USQL_VERSION}-linux-${usql_arch}.tar.bz2" -o /tmp/usql.tar.bz2; \
+    echo "${usql_sha256}  /tmp/usql.tar.bz2" | sha256sum -c -; \
+    tar -xjf /tmp/usql.tar.bz2 -C /tmp usql_static; \
+    install -m 0755 /tmp/usql_static /usr/local/bin/usql; \
+    rm -f /tmp/usql.tar.bz2 /tmp/usql_static; \
+    clickhouse_base_url="https://github.com/ClickHouse/ClickHouse/releases/download/v${CLICKHOUSE_VERSION}-stable"; \
+    curl -fsSL "${clickhouse_base_url}/clickhouse-common-static-${CLICKHOUSE_VERSION}-${clickhouse_arch}.tgz" -o /tmp/clickhouse-common-static.tgz; \
+    curl -fsSL "${clickhouse_base_url}/clickhouse-client-${CLICKHOUSE_VERSION}-${clickhouse_arch}.tgz" -o /tmp/clickhouse-client.tgz; \
+    echo "${clickhouse_common_sha512}  /tmp/clickhouse-common-static.tgz" | sha512sum -c -; \
+    echo "${clickhouse_client_sha512}  /tmp/clickhouse-client.tgz" | sha512sum -c -; \
+    mkdir -p /tmp/clickhouse /etc/clickhouse-client; \
+    tar -xzf /tmp/clickhouse-common-static.tgz -C /tmp/clickhouse; \
+    tar -xzf /tmp/clickhouse-client.tgz -C /tmp/clickhouse; \
+    install -m 0755 "/tmp/clickhouse/clickhouse-common-static-${CLICKHOUSE_VERSION}/usr/bin/clickhouse" /usr/local/bin/clickhouse; \
+    install -m 0644 "/tmp/clickhouse/clickhouse-client-${CLICKHOUSE_VERSION}/etc/clickhouse-client/config.xml" /etc/clickhouse-client/config.xml; \
+    for name in ch chc chdig chl clickhouse-benchmark clickhouse-chdig clickhouse-client clickhouse-compressor clickhouse-format clickhouse-local clickhouse-obfuscator; do ln -sf /usr/local/bin/clickhouse "/usr/local/bin/${name}"; done; \
+    rm -rf /tmp/clickhouse /tmp/clickhouse-common-static.tgz /tmp/clickhouse-client.tgz; \
+    psql --version; \
+    mysql --version; \
+    redis-cli --version; \
+    mongosh --version; \
+    duckdb --version; \
+    usql --version; \
+    clickhouse local --version; \
+    sacd_extract --help | head -n 1
+
 ### SETUP SCRIPTS ###
 
 COPY setup_universal.sh /opt/codex/setup_universal.sh
@@ -321,17 +437,17 @@ RUN chmod +x /opt/codex/setup_universal.sh
 
 ### AI CLIS ###
 
-ARG CLAUDE_CODE_VERSION=2.1.177
-ARG GEMINI_CLI_VERSION=0.46.0
-ARG CODEX_CLI_VERSION=0.139.0
-ARG CODEX_CLI_SHA256_AMD64=12ebf70df41dc831061862912ab5e7eacdd112bb17e8ce9b2098cb3d92180081
-ARG CODEX_CLI_SHA256_ARM64=2b7407643e0e74c525d84347c9eecec4b3d275af0382142ac42216508bb0b2a2
+ARG CLAUDE_CODE_VERSION=2.1.181
+ARG GEMINI_CLI_VERSION=0.47.0
+ARG CODEX_CLI_VERSION=0.141.0
+ARG CODEX_CLI_SHA256_AMD64=f1e2bf9fa0ba6eb82119d621b6b71bc38edd33c06dc2867b31a027052358957d
+ARG CODEX_CLI_SHA256_ARM64=8c9f31811d659fcc17c5f1a21bc0971984469c9e3a63c2b39b61cc7694f3a101
 
-ARG ANTIGRAVITY_CLI_VERSION=1.0.8
-ARG ANTIGRAVITY_CLI_URL_AMD64=https://github.com/google-antigravity/antigravity-cli/releases/download/1.0.8/agy_cli_linux_x64.tar.gz
-ARG ANTIGRAVITY_CLI_SHA512_AMD64=78426a61f9295d75285d9cdd39e9b9dc2736346468c92ce86a6fde1bcc7a9d6dd32c7bed1903a5deacd874a05d75babf5b907e991a117ad63f33548113c61bc2
-ARG ANTIGRAVITY_CLI_URL_ARM64=https://github.com/google-antigravity/antigravity-cli/releases/download/1.0.8/agy_cli_linux_arm64.tar.gz
-ARG ANTIGRAVITY_CLI_SHA512_ARM64=982b344defd2e63b08d4a9ef608a770aba3a92e9a4118d318e0082f29743457e8a16aaf1c00f7c3ade75c2d07aef5a8fa5da660e408cb199b47a8778b31228a0
+ARG ANTIGRAVITY_CLI_VERSION=1.0.9
+ARG ANTIGRAVITY_CLI_URL_AMD64=https://github.com/google-antigravity/antigravity-cli/releases/download/1.0.9/agy_cli_linux_x64.tar.gz
+ARG ANTIGRAVITY_CLI_SHA512_AMD64=9c09eef905ea34079988908067cb716aaeadf3807ea572403d792c5113533213f98f43159d63679408819869bfe143d8e2789e3fab0f28593ffd04f2a7dcf47b
+ARG ANTIGRAVITY_CLI_URL_ARM64=https://github.com/google-antigravity/antigravity-cli/releases/download/1.0.9/agy_cli_linux_arm64.tar.gz
+ARG ANTIGRAVITY_CLI_SHA512_ARM64=e0b13d0cc3f1337962d1dff7f03f44b2c44b5e07dd483c9633a00235d7b5c8257c6dc5e084b12281aaa18e1c94aa81602c994ee19b5d2e376bc24d85f569372d
 
 RUN --mount=type=cache,target=/root/.npm \
     set -e; \

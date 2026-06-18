@@ -56,6 +56,51 @@ gemini --version
 agy --version
 npm ls -g
 
+echo "- Database clients:"
+psql --version
+mysql --version
+redis-cli --version
+mongosh --version
+duckdb --version
+usql --version
+clickhouse client --version
+clickhouse local --version
+
+echo "- Media, audio, and subtitle CLIs:"
+ffmpeg -version | head -n 1
+ffprobe -version | head -n 1
+mediainfo --Version
+mkvmerge --version
+mkvextract --version
+flac --version
+metaflac --version
+shnsplit -v 2>&1 | head -n 1
+cuetag 2>&1 | head -n 1
+sacd_extract --help | head -n 1
+ffsubsync --version
+subliminal --version
+ccextractor --version 2>&1 | head -n 1 || true
+cueprint --version | head -n 1
+bchunk 2>&1 | head -n 1 || true
+wavpack --version | head -n 1
+mp3splt -v | head -n 1
+mp3gain -v 2>&1 | head -n 1
+lame --version | head -n 1
+twolame --help 2>&1 | head -n 1 || true
+faad --help 2>&1 | head -n 1 || true
+mpcdec -h 2>&1 | head -n 1
+MP4Box -version > /tmp/mp4box-version.out 2>&1
+head -n 2 /tmp/mp4box-version.out
+rm -f /tmp/mp4box-version.out
+rm -rf /root/.gpac
+dvdbackup --version | head -n 1
+lsdvd --version 2>&1 | head -n 1 || true
+vobcopy -v 2>&1 | head -n 1 || true
+abcde -v | head -n 1
+cdparanoia -V 2>&1 | head -n 1 || true
+rsgain --version | head -n 1
+vorbisgain --version | head -n 1
+
 echo "- Bun:"
 bun --version
 

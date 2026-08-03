@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+real_bin="${BROWSER_USE_REAL_BIN:-/opt/browser-use/bin/browser-use}"
+chromium_bin="${BROWSER_USE_CHROMIUM_BIN:-chromium}"
+cdp_host="127.0.0.1"
+cdp_port="${BROWSER_USE_CDP_PORT:-9222}"
+cdp_url="http://${cdp_host}:${cdp_port}"
+runtime_dir="${BROWSER_USE_RUNTIME_DIR:-/tmp/browser-use-${UID}}"
+profile_dir="${BROWSER_USE_PROFILE_DIR:-${HOME}/.browser-use/chromium-profile}"
+pid_file="${runtime_dir}/chromium.pid"
+log_file="${runtime_dir}/chromium.log"
+
+case "${1:-}" in
+  -h|--help|--version|--doctor|--update|--reload|help|doctor|auth|skill|recordings|video|telemetry)
+    exec "$real_bin" "$@"
+    ;;
+esac
+
+if [[ -n "${BU_CDP_URL:-}" || -n "${BU_CDP_WS:-}" ]]; then
+  exec "$real_bin" "$@"
+fi
+
+cdp_ready() {
+  curl -fsS --max-time 1 "${cdp_url}/json/version" >/dev/null 2>&1
+}
+
+mkdir -p "$runtime_dir" "$profile_dir"
+chmod 0700 "$runtime_dir" "$profile_dir"
+
+exec 9>"${runtime_dir}/chromium.lock"
+flock 9
+
+if ! cdp_ready; then
+  if [[ -s "$pid_file" ]] && ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
+    : >"$pid_file"
+  fi
+
+  if [[ ! -s "$pid_file" ]]; then
+    "$chromium_bin" \
+      --headless=new \
+      --no-sandbox \
+      --disable-dev-shm-usage \
+      --no-first-run \
+      --no-default-browser-check \
+      --remote-allow-origins='*' \
+      "--remote-debugging-address=${cdp_host}" \
+      "--remote-debugging-port=${cdp_port}" \
+      "--user-data-dir=${profile_dir}" \
+      about:blank \
+      </dev/null >>"$log_file" 2>&1 &
+    printf '%s\n' "$!" >"$pid_file"
+  fi
+
+  for _ in $(seq 1 150); do
+    if cdp_ready; then
+      break
+    fi
+    sleep 0.1
+  done
+fi
+
+if ! cdp_ready; then
+  echo "Browser Use Chromium did not expose CDP at ${cdp_url}; see ${log_file}" >&2
+  exit 1
+fi
+
+flock -u 9
+export BU_CDP_URL="$cdp_url"
+exec "$real_bin" "$@"

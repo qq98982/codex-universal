@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -u
+
+browser_use_bin="${BROWSER_USE_BIN:-/opt/browser-use/bin/browser-use}"
+status=0
+
+for target in codex claude gemini; do
+  if ! "$browser_use_bin" skill install \
+    --target "$target" \
+    --no-install \
+    --force; then
+    echo "warning: failed to refresh Browser Use skill for ${target}" >&2
+    status=1
+  fi
+done
+
+exit "$status"

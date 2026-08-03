@@ -11,6 +11,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PIPX_BIN_DIR=/usr/local/bin
 ENV PIPX_HOME=/opt/pipx
 ENV UV_NO_PROGRESS=1
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 ENV PATH=/root/.local/bin:/usr/local/bin:$PATH
 
 ### AI AGENT, NAS, MEDIA, DOCUMENT, AND SEARCH TOOLS ###
@@ -198,6 +199,27 @@ RUN --mount=type=cache,target=/root/.npm \
     node --version; \
     npm --version
 
+### HEADLESS BROWSERS ###
+
+ARG PLAYWRIGHT_VERSION=1.61.1
+
+COPY playwright-browser fetch-page /usr/local/bin/
+
+RUN --mount=type=cache,target=/root/.npm \
+    --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    set -e; \
+    chmod 0755 /usr/local/bin/playwright-browser /usr/local/bin/fetch-page; \
+    for name in chromium chromium-browser google-chrome chrome firefox webkit; do \
+      ln -sf /usr/local/bin/playwright-browser "/usr/local/bin/${name}"; \
+    done; \
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install -g "playwright@${PLAYWRIGHT_VERSION}"; \
+    playwright install --with-deps chromium firefox webkit; \
+    npm cache clean --force || true; \
+    rm -rf /var/lib/apt/lists/*; \
+    playwright --version; \
+    test -d "$PLAYWRIGHT_BROWSERS_PATH"
+
 ### RELEASED FILE TOOL BINARIES ###
 
 ARG CZKAWKA_VERSION=11.0.1
@@ -345,17 +367,17 @@ RUN chmod +x /opt/codex/setup_slim.sh
 
 ### AI CLIS ###
 
-ARG CLAUDE_CODE_VERSION=2.1.181
-ARG GEMINI_CLI_VERSION=0.47.0
-ARG CODEX_CLI_VERSION=0.141.0
-ARG CODEX_CLI_SHA256_AMD64=f1e2bf9fa0ba6eb82119d621b6b71bc38edd33c06dc2867b31a027052358957d
-ARG CODEX_CLI_SHA256_ARM64=8c9f31811d659fcc17c5f1a21bc0971984469c9e3a63c2b39b61cc7694f3a101
+ARG CLAUDE_CODE_VERSION=2.1.196
+ARG GEMINI_CLI_VERSION=0.49.0
+ARG CODEX_CLI_VERSION=0.142.4
+ARG CODEX_CLI_SHA256_AMD64=f0ac43751c6d3b29a973a860a8de528ad79cb20cc1296611930a3d5c91ddef95
+ARG CODEX_CLI_SHA256_ARM64=a546ee05915313fea340f8315b54f43d077f4390afbb5af2de944d48013d447f
 
-ARG ANTIGRAVITY_CLI_VERSION=1.0.9
-ARG ANTIGRAVITY_CLI_URL_AMD64=https://github.com/google-antigravity/antigravity-cli/releases/download/1.0.9/agy_cli_linux_x64.tar.gz
-ARG ANTIGRAVITY_CLI_SHA512_AMD64=9c09eef905ea34079988908067cb716aaeadf3807ea572403d792c5113533213f98f43159d63679408819869bfe143d8e2789e3fab0f28593ffd04f2a7dcf47b
-ARG ANTIGRAVITY_CLI_URL_ARM64=https://github.com/google-antigravity/antigravity-cli/releases/download/1.0.9/agy_cli_linux_arm64.tar.gz
-ARG ANTIGRAVITY_CLI_SHA512_ARM64=e0b13d0cc3f1337962d1dff7f03f44b2c44b5e07dd483c9633a00235d7b5c8257c6dc5e084b12281aaa18e1c94aa81602c994ee19b5d2e376bc24d85f569372d
+ARG ANTIGRAVITY_CLI_VERSION=1.0.13
+ARG ANTIGRAVITY_CLI_URL_AMD64=https://github.com/google-antigravity/antigravity-cli/releases/download/1.0.13/agy_cli_linux_x64.tar.gz
+ARG ANTIGRAVITY_CLI_SHA256_AMD64=6bf990458c114af3b3173dcbc1b0fb9ab93bea91c53b605fdd69aedd29a21cd9
+ARG ANTIGRAVITY_CLI_URL_ARM64=https://github.com/google-antigravity/antigravity-cli/releases/download/1.0.13/agy_cli_linux_arm64.tar.gz
+ARG ANTIGRAVITY_CLI_SHA256_ARM64=e2f062ff8a573d2da54c03c8f0b66e130a563a08c87b6db174953a9afdd21235
 
 RUN --mount=type=cache,target=/root/.npm \
     --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -384,12 +406,12 @@ RUN --mount=type=cache,target=/root/.npm \
     install -m 0755 "/tmp/${codex_asset}" /usr/local/bin/codex; \
     rm -f /tmp/codex.tar.gz "/tmp/${codex_asset}"; \
     case "$TARGETARCH" in \
-      amd64) agy_url="$ANTIGRAVITY_CLI_URL_AMD64"; agy_sha512="$ANTIGRAVITY_CLI_SHA512_AMD64" ;; \
-      arm64) agy_url="$ANTIGRAVITY_CLI_URL_ARM64"; agy_sha512="$ANTIGRAVITY_CLI_SHA512_ARM64" ;; \
+      amd64) agy_url="$ANTIGRAVITY_CLI_URL_AMD64"; agy_sha256="$ANTIGRAVITY_CLI_SHA256_AMD64" ;; \
+      arm64) agy_url="$ANTIGRAVITY_CLI_URL_ARM64"; agy_sha256="$ANTIGRAVITY_CLI_SHA256_ARM64" ;; \
       *) echo "Unsupported Antigravity CLI architecture: $TARGETARCH" >&2; exit 1 ;; \
     esac; \
     curl -fsSL "$agy_url" -o /tmp/antigravity.tar.gz; \
-    echo "${agy_sha512}  /tmp/antigravity.tar.gz" | sha512sum -c -; \
+    echo "${agy_sha256}  /tmp/antigravity.tar.gz" | sha256sum -c -; \
     tar -xzf /tmp/antigravity.tar.gz -C /tmp antigravity; \
     install -m 0755 /tmp/antigravity /usr/local/bin/agy; \
     ln -sf /usr/local/bin/agy /usr/local/bin/antigravity; \
@@ -398,6 +420,75 @@ RUN --mount=type=cache,target=/root/.npm \
     claude --version; \
     gemini --version; \
     test "$(agy --version)" = "$ANTIGRAVITY_CLI_VERSION"
+
+### CONTAINER AND CLOUD CLIENT TOOLS ###
+
+ARG DOCKER_CE_CLI_VERSION=5:29.6.1-1~ubuntu.24.04~noble
+ARG DOCKER_BUILDX_PLUGIN_VERSION=0.35.0-1~ubuntu.24.04~noble
+ARG DOCKER_COMPOSE_PLUGIN_VERSION=5.2.0-1~ubuntu.24.04~noble
+ARG AWS_CLI_VERSION=2.35.12
+ARG AZURE_CLI_VERSION=2.87.0-1~noble
+ARG GOOGLE_CLOUD_CLI_VERSION=574.0.0-0
+ARG KUBECTL_VERSION=v1.36.2
+ARG HELM_VERSION=4.2.2
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    set -e; \
+    . /etc/os-release; \
+    install -m 0755 -d /etc/apt/keyrings /usr/share/keyrings; \
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc; \
+    chmod a+r /etc/apt/keyrings/docker.asc; \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${VERSION_CODENAME} stable" > /etc/apt/sources.list.d/docker.list; \
+    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/packages.microsoft.gpg; \
+    chmod a+r /etc/apt/keyrings/packages.microsoft.gpg; \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ ${VERSION_CODENAME} main" > /etc/apt/sources.list.d/azure-cli.list; \
+    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg; \
+    chmod a+r /usr/share/keyrings/cloud.google.gpg; \
+    echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" > /etc/apt/sources.list.d/google-cloud-sdk.list; \
+    apt-get update; \
+    CLOUDSDK_SKIP_PY_COMPILATION=1 apt-get install -y --no-install-recommends \
+        "docker-ce-cli=${DOCKER_CE_CLI_VERSION}" \
+        "docker-buildx-plugin=${DOCKER_BUILDX_PLUGIN_VERSION}" \
+        "docker-compose-plugin=${DOCKER_COMPOSE_PLUGIN_VERSION}" \
+        "azure-cli=${AZURE_CLI_VERSION}" \
+        "google-cloud-cli=${GOOGLE_CLOUD_CLI_VERSION}" \
+        "google-cloud-cli-gke-gcloud-auth-plugin=${GOOGLE_CLOUD_CLI_VERSION}"; \
+    for path in /usr/libexec/docker/cli-plugins/docker-compose /usr/lib/docker/cli-plugins/docker-compose; do \
+      if [ -x "$path" ]; then ln -sf "$path" /usr/local/bin/docker-compose; break; fi; \
+    done; \
+    rm -rf /var/lib/apt/lists/*; \
+    case "$TARGETARCH" in \
+      amd64) aws_arch="x86_64"; kubectl_arch="amd64"; helm_arch="amd64" ;; \
+      arm64) aws_arch="aarch64"; kubectl_arch="arm64"; helm_arch="arm64" ;; \
+      *) echo "Unsupported cloud CLI architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-${aws_arch}-${AWS_CLI_VERSION}.zip" -o /tmp/awscliv2.zip; \
+    unzip -q /tmp/awscliv2.zip -d /tmp; \
+    /tmp/aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli; \
+    rm -rf /tmp/aws /tmp/awscliv2.zip; \
+    curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${kubectl_arch}/kubectl" -o /tmp/kubectl; \
+    curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${kubectl_arch}/kubectl.sha256" -o /tmp/kubectl.sha256; \
+    echo "$(cat /tmp/kubectl.sha256)  /tmp/kubectl" | sha256sum -c -; \
+    install -m 0755 /tmp/kubectl /usr/local/bin/kubectl; \
+    rm -f /tmp/kubectl /tmp/kubectl.sha256; \
+    helm_asset="helm-v${HELM_VERSION}-linux-${helm_arch}.tar.gz"; \
+    curl -fsSL "https://get.helm.sh/${helm_asset}" -o /tmp/helm.tar.gz; \
+    curl -fsSL "https://get.helm.sh/${helm_asset}.sha256sum" -o /tmp/helm.tar.gz.sha256sum; \
+    sed "s#  ${helm_asset}#  /tmp/helm.tar.gz#" /tmp/helm.tar.gz.sha256sum | sha256sum -c -; \
+    tar -xzf /tmp/helm.tar.gz -C /tmp; \
+    install -m 0755 "/tmp/linux-${helm_arch}/helm" /usr/local/bin/helm; \
+    rm -rf /tmp/helm.tar.gz /tmp/helm.tar.gz.sha256sum "/tmp/linux-${helm_arch}"; \
+    docker --version; \
+    docker buildx version; \
+    docker compose version; \
+    docker-compose version; \
+    aws --version; \
+    az version --output json | jq -r '."azure-cli"'; \
+    gcloud --version | head -n 1; \
+    gke-gcloud-auth-plugin --version; \
+    kubectl version --client=true; \
+    helm version --short
 
 ### VERIFICATION SCRIPT ###
 

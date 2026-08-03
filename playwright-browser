@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+command_name="$(basename "$0")"
+
+case "$command_name" in
+  chromium | chromium-browser | google-chrome | chrome)
+    browser_name="chromium"
+    ;;
+  firefox | webkit)
+    browser_name="$command_name"
+    ;;
+  *)
+    if [ "$#" -gt 0 ]; then
+      browser_name="$1"
+      shift
+    else
+      browser_name="chromium"
+    fi
+    ;;
+esac
+
+global_node_path="$(npm root -g)"
+browser_executable="$(
+  NODE_PATH="${global_node_path}${NODE_PATH:+:${NODE_PATH}}" node - "$browser_name" <<'JS'
+const browserName = process.argv[2];
+const playwright = require("playwright");
+const launcher = playwright[browserName];
+
+if (!launcher || typeof launcher.executablePath !== "function") {
+  console.error(`Unsupported Playwright browser: ${browserName}`);
+  process.exit(64);
+}
+
+console.log(launcher.executablePath());
+JS
+)"
+
+exec "$browser_executable" "$@"

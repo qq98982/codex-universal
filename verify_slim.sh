@@ -39,6 +39,46 @@ claude --version
 gemini --version
 agy --version
 
+echo "- Container and cloud CLIs:"
+need docker docker-compose aws az gcloud gke-gcloud-auth-plugin kubectl helm
+docker --version
+docker buildx version
+docker compose version
+docker-compose version
+aws --version
+az version --output json | jq -r '."azure-cli"'
+gcloud --version | head -n 1
+gke-gcloud-auth-plugin --version
+kubectl version --client=true
+helm version --short
+
+echo "- Headless browsers:"
+need playwright playwright-browser fetch-page chromium chromium-browser google-chrome chrome firefox webkit
+playwright --version
+chromium --headless --no-sandbox --disable-gpu --dump-dom 'data:text/html,<main>browser-wrapper-ok</main>' | grep browser-wrapper-ok
+fetch-page 'data:text/html,<main><h1>fetch-page-ok</h1><table><tr><td>Progressive</td></tr></table></main>' | grep fetch-page-ok
+fetch-page --selector table 'data:text/html,<main><h1>fetch-page-ok</h1><table><tr><td>Progressive</td></tr></table></main>' | grep Progressive
+fetch-page --html --selector main 'data:text/html,<main><h1>fetch-page-ok</h1><table><tr><td>Progressive</td></tr></table></main>' | grep '<main>'
+NODE_PATH="$(npm root -g)" node - <<'JS'
+const { chromium, firefox, webkit } = require("playwright");
+
+(async () => {
+  for (const [name, launcher] of Object.entries({ chromium, firefox, webkit })) {
+    const browser = await launcher.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.setContent("<main>browser-ok</main>");
+    const text = await page.textContent("main");
+    await browser.close();
+
+    if (text !== "browser-ok") {
+      throw new Error(`${name} returned unexpected page text: ${text}`);
+    }
+
+    console.log(`${name} headless launch ok`);
+  }
+})();
+JS
+
 echo "- Python and automation:"
 need python uv pipx ffsubsync
 python --version

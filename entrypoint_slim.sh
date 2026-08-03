@@ -4,7 +4,15 @@ echo "============================================"
 echo "Welcome to gptbasesparticle/codex-universal:slim"
 echo "============================================"
 
-/opt/codex/setup_slim.sh
+setup_script="${CODEX_SETUP_SCRIPT:-/opt/codex/setup_slim.sh}"
+"$setup_script"
+
+if [[ $# -gt 0 ]]; then
+  echo "Environment ready. Running command."
+  exec bash --login "$@"
+fi
 
 echo "Environment ready. Dropping you into a bash shell."
-exec bash --login "$@"
+trap 'exit 0' HUP INT TERM
+bash --login
+exit 0

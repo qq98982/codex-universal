@@ -1,0 +1,136 @@
+#!/usr/bin/env node
+
+const { execFileSync } = require("child_process");
+const { createRequire } = require("module");
+
+function loadPlaywright() {
+  try {
+    return require("playwright");
+  } catch {
+    const globalRoot = execFileSync("npm", ["root", "-g"], { encoding: "utf8" }).trim();
+    return createRequire(`${globalRoot}/`)("playwright");
+  }
+}
+
+function usage() {
+  console.error(`Usage: fetch-page [--html|--text] [--selector SELECTOR] [--timeout MS] [--wait MS] URL
+
+Fetch a page with a headless Playwright browser.
+
+Options:
+  --text               Print visible text from the page or selector (default)
+  --html               Print rendered HTML from the page or selector
+  --selector SELECTOR  Restrict output to a CSS selector
+  --timeout MS         Navigation timeout in milliseconds (default: 30000)
+  --wait MS            Extra wait after navigation in milliseconds
+  --browser NAME       chromium, firefox, or webkit (default: chromium)
+  -h, --help           Show this help
+`);
+}
+
+function parseArgs(argv) {
+  const options = {
+    mode: "text",
+    selector: null,
+    timeout: 30000,
+    wait: 0,
+    browser: process.env.PLAYWRIGHT_BROWSER || "chromium",
+    url: null,
+  };
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+
+    if (arg === "--text") {
+      options.mode = "text";
+    } else if (arg === "--html") {
+      options.mode = "html";
+    } else if (arg === "--selector") {
+      options.selector = argv[++i];
+    } else if (arg === "--timeout") {
+      options.timeout = Number(argv[++i]);
+    } else if (arg === "--wait") {
+      options.wait = Number(argv[++i]);
+    } else if (arg === "--browser") {
+      options.browser = argv[++i];
+    } else if (arg === "-h" || arg === "--help") {
+      usage();
+      process.exit(0);
+    } else if (!options.url) {
+      options.url = arg;
+    } else {
+      throw new Error(`Unexpected argument: ${arg}`);
+    }
+  }
+
+  if (!options.url) {
+    usage();
+    process.exit(64);
+  }
+
+  if (!Number.isFinite(options.timeout) || options.timeout <= 0) {
+    throw new Error("--timeout must be a positive number");
+  }
+
+  if (!Number.isFinite(options.wait) || options.wait < 0) {
+    throw new Error("--wait must be a non-negative number");
+  }
+
+  return options;
+}
+
+async function main() {
+  const options = parseArgs(process.argv.slice(2));
+  const playwright = loadPlaywright();
+  const launcher = playwright[options.browser];
+
+  if (!launcher || typeof launcher.launch !== "function") {
+    throw new Error(`Unsupported browser: ${options.browser}`);
+  }
+
+  const launchOptions = { headless: true };
+  if (options.browser === "chromium") {
+    launchOptions.chromiumSandbox = false;
+  }
+
+  const browser = await launcher.launch(launchOptions);
+  try {
+    const page = await browser.newPage({
+      userAgent:
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
+        "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    });
+
+    await page.goto(options.url, {
+      waitUntil: "domcontentloaded",
+      timeout: options.timeout,
+    });
+
+    if (options.wait > 0) {
+      await page.waitForTimeout(options.wait);
+    }
+
+    let output;
+    if (options.selector) {
+      await page.waitForSelector(options.selector, { timeout: options.timeout });
+      output =
+        options.mode === "html"
+          ? await page.locator(options.selector).first().evaluate((node) => node.outerHTML)
+          : await page.locator(options.selector).first().innerText({ timeout: options.timeout });
+    } else {
+      output = options.mode === "html" ? await page.content() : await page.locator("body").innerText();
+    }
+
+    process.stdout.write(output);
+    if (!output.endsWith("\n")) {
+      process.stdout.write("\n");
+    }
+  } finally {
+    await browser.close();
+  }
+}
+
+main().catch((error) => {
+  console.error(error && error.stack ? error.stack : String(error));
+  process.exit(1);
+});

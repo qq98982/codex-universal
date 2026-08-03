@@ -9,12 +9,14 @@ docker pull docker.io/gptbasesparticle/codex-universal:latest
 docker pull docker.io/gptbasesparticle/codex-universal:slim
 ```
 
-- `latest`: full development image with one stable version per language/runtime.
-- `slim`: AI agent toolbox for shell work, NAS/Synology files, disks, media files, documents, subtitles, encoding conversion, and search. It does not include full language SDKs such as Rust, Swift, PHP, Ruby, Go, Java, or Elixir.
+- `latest`: legacy full development image with one stable version per language/runtime.
+- `slim`: maintained AI agent toolbox for shell work, headless browser automation, NAS/Synology files, disks, media files, documents, subtitles, encoding conversion, and search. It does not include full language SDKs such as Rust, Swift, PHP, Ruby, Go, Java, or Elixir.
 
 This repository can build both `linux/amd64` and `linux/arm64`, but the published/tested image is `linux/amd64`.
 
 ## Full Image
+
+The full image is kept for legacy use. New AI agent tooling updates target the slim image.
 
 Run the full development image:
 
@@ -70,6 +72,8 @@ docker run --rm -it --privileged \
 The slim image includes the AI CLIs plus tools for:
 
 - AI agents: `codex`, `claude`, `gemini`, `agy`
+- Container and cloud clients: `docker`, `docker compose`, `aws`, `az`, `gcloud`, `kubectl`, and `helm`
+- Headless browsers and scraping: `playwright`, `fetch-page`, `chromium`, `firefox`, and `webkit`
 - Search and inspection: `rg`, `rga`, `fd`, `fzf`, `plocate`, `tree`, `file`, `bat`, `delta`
 - NAS and sync: `rclone`, `rsync`, `smbclient`, `cifs-utils`, `nfs-common`
 - Disk and duplicate cleanup: `smartctl`, `hdparm`, `parted`, `sgdisk`, `testdisk`, `ncdu`, `duf`, `czkawka_cli`, `jdupes`, `fdupes`, `rdfind`, `rmlint`, `duperemove`
@@ -80,6 +84,29 @@ The slim image includes the AI CLIs plus tools for:
 - Encoding conversion: `iconv`, `uchardet`, `enca`, `nkf`, `dos2unix`, `convmv`, `detox`, `recode`
 
 LibreOffice is intentionally not installed in `slim`.
+
+Use host Docker and local cloud credentials by mounting the relevant client state.
+The image includes Docker clients, not a Docker daemon; mount a usable host socket
+or set `DOCKER_HOST` for a remote/rootless Docker endpoint.
+
+```sh
+docker run --rm -it \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v "$HOME/.docker:/root/.docker:ro" \
+    -v "$HOME/.aws:/root/.aws:ro" \
+    -v "$HOME/.azure:/root/.azure" \
+    -v "$HOME/.config/gcloud:/root/.config/gcloud" \
+    -v "$HOME/.kube:/root/.kube:ro" \
+    docker.io/gptbasesparticle/codex-universal:slim
+```
+
+Fetch rendered page content from sites that need a browser-like environment:
+
+```sh
+fetch-page "https://metalstorm.net/bands/albums_top.php?album_style=Progressive"
+fetch-page --selector 'xpath=//span[contains(@class,"megatitle")]/following-sibling::div[contains(@class,"cbox")][1]//table' \
+    "https://metalstorm.net/bands/albums_top.php?album_style=Progressive"
+```
 
 ## AI CLI Headless Commands
 

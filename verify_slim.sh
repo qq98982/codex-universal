@@ -18,10 +18,10 @@ echo "- Core shell and search tools:"
 need bash git gh rg rga rga-preproc fd fzf jq yq bat delta eza zoxide btop duf \
   tree tmux vim nano curl wget rsync ssh scp zip unzip 7zz unar xz make parallel \
   shellcheck shfmt sqlite3 socat strace telnet whois nc lsof pv progress
-bash --version | head -n 1
+bash --version | sed -n '1p'
 git --version
-gh --version | head -n 1
-rg --version | head -n 1
+gh --version | sed -n '1p'
+rg --version | sed -n '1p'
 rga --version
 fd --version
 fzf --version
@@ -47,14 +47,36 @@ docker compose version
 docker-compose version
 aws --version
 az version --output json | jq -r '."azure-cli"'
-gcloud --version | head -n 1
+gcloud --version | sed -n '1p'
 gke-gcloud-auth-plugin --version
 kubectl version --client=true
 helm version --short
 
 echo "- Headless browsers:"
-need playwright playwright-browser fetch-page chromium chromium-browser google-chrome chrome firefox webkit
+need playwright playwright-browser fetch-page browser-use chromium chromium-browser google-chrome chrome firefox webkit
+browser_use_home="$(mktemp -d)"
+browser_use_runtime="$(mktemp -d)"
+cleanup_browser_use() {
+  if [[ -s "$browser_use_runtime/chromium.pid" ]]; then
+    kill "$(cat "$browser_use_runtime/chromium.pid")" 2>/dev/null || true
+    for _ in $(seq 1 50); do
+      kill -0 "$(cat "$browser_use_runtime/chromium.pid")" 2>/dev/null || break
+      sleep 0.1
+    done
+  fi
+  rm -rf "$browser_use_home" "$browser_use_runtime" /tmp/browser-use-smoke.out \
+    /tmp/org.chromium.Chromium.*
+}
+trap cleanup_browser_use EXIT
+
 playwright --version
+HOME="$browser_use_home" browser-use --version
+/opt/browser-use/tools/browser-use/bin/python - <<'PY'
+import os
+from importlib.metadata import version
+
+assert version("browser-use") == os.environ["EXPECTED_BROWSER_USE_VERSION"]
+PY
 chromium --headless --no-sandbox --disable-gpu --dump-dom 'data:text/html,<main>browser-wrapper-ok</main>' | grep browser-wrapper-ok
 fetch-page 'data:text/html,<main><h1>fetch-page-ok</h1><table><tr><td>Progressive</td></tr></table></main>' | grep fetch-page-ok
 fetch-page --selector table 'data:text/html,<main><h1>fetch-page-ok</h1><table><tr><td>Progressive</td></tr></table></main>' | grep Progressive
@@ -79,6 +101,34 @@ const { chromium, firefox, webkit } = require("playwright");
 })();
 JS
 
+for agent in codex claude gemini; do
+  mkdir -p "$browser_use_home/.$agent/skills/unrelated"
+  printf 'keep-%s\n' "$agent" >"$browser_use_home/.$agent/skills/unrelated/SKILL.md"
+done
+HOME="$browser_use_home" \
+  BROWSER_USE_BIN=/opt/browser-use/bin/browser-use \
+  /opt/codex/refresh-browser-use-skills
+for agent in codex claude gemini; do
+  grep -F "keep-${agent}" "$browser_use_home/.$agent/skills/unrelated/SKILL.md"
+  test -s "$browser_use_home/.$agent/skills/browser-use/SKILL.md"
+done
+
+printf 'new_tab("data:text/html,<title>browser-use-smoke</title><main>browser-use-ok</main>")\nprint(page_info())\n' \
+  | HOME="$browser_use_home" \
+    BROWSER_USE_RUNTIME_DIR="$browser_use_runtime" \
+    BROWSER_USE_CDP_PORT=19222 \
+    timeout 90 browser-use >/tmp/browser-use-smoke.out
+curl -fsS http://127.0.0.1:19222/json/version | jq -e '.Browser | length > 0' >/dev/null
+grep -F 'browser-use-smoke' /tmp/browser-use-smoke.out
+head -n 5 /tmp/browser-use-smoke.out
+cleanup_browser_use
+trap - EXIT
+test ! -e /root/.config/browser-harness
+if compgen -G '/tmp/org.chromium.Chromium.*' >/dev/null; then
+  echo "Chromium runtime data remained after browser verification" >&2
+  exit 1
+fi
+
 echo "- Python and automation:"
 need python uv pipx ffsubsync
 python --version
@@ -97,19 +147,19 @@ PY
 echo "- NAS, disk, and filesystem tools:"
 need rclone smbclient mount.cifs mount.nfs smartctl hdparm parted sgdisk testdisk \
   ncdu duf jdupes fdupes rdfind rmlint duperemove czkawka trash-put plocate
-rclone version | head -n 1
+rclone version | sed -n '1p'
 smbclient --version
-mount.cifs --help 2>&1 | head -n 1 || true
-showmount --version 2>&1 | head -n 1 || true
-smartctl --version | head -n 1
+mount.cifs --help 2>&1 | sed -n '1p' || true
+showmount --version 2>&1 | sed -n '1p' || true
+smartctl --version | sed -n '1p'
 hdparm -V
-parted --version | head -n 1
+parted --version | sed -n '1p'
 sgdisk --version
-testdisk /version | head -n 1
+testdisk /version | sed -n '1p'
 ncdu --version
 duf --version
-jdupes --version | head -n 1
-rmlint --version | head -n 1
+jdupes --version | sed -n '1p'
+rmlint --version | sed -n '1p'
 czkawka --version
 
 echo "- Media, subtitle, and image tools:"
@@ -120,50 +170,50 @@ need ffmpeg ffprobe mediainfo mkvmerge mkvextract exiftool identify convert cweb
   ccextractor sacd_extract shnsplit cuetag cuebreakpoints cueprint cueconvert \
   bchunk wavpack wvunpack mp3splt mp3gain lame twolame faad mpcdec mpcenc \
   MP4Box dvdbackup lsdvd vobcopy abcde cdparanoia rsgain vorbisgain
-ffmpeg -version | head -n 1
-ffprobe -version | head -n 1
+ffmpeg -version | sed -n '1p'
+ffprobe -version | sed -n '1p'
 mediainfo --Version
 mkvmerge --version
 mkvextract --version
 exiftool -ver
-identify -version | head -n 1
+identify -version | sed -n '1p'
 cwebp -version
-avifenc --version | head -n 1
+avifenc --version | sed -n '1p'
 heif-convert --version
-jpegoptim --version | head -n 1
-optipng -v | head -n 1
-pngquant --version | head -n 1
+jpegoptim --version | sed -n '1p'
+optipng -v | sed -n '1p'
+pngquant --version | sed -n '1p'
 flac --version
 metaflac --version
 id3v2 --version
-mp3val 2>&1 | head -n 1
-AtomicParsley -v 2>&1 | head -n 1
+mp3val 2>&1 | sed -n '1p'
+AtomicParsley -v 2>&1 | sed -n '1p'
 sox --version
 subliminal --version
 ffsubsync --version
-ccextractor --version 2>&1 | head -n 1 || true
-sacd_extract --help | head -n 1
-shnsplit -v 2>&1 | head -n 1
-cuetag 2>&1 | head -n 1
-cueprint --version | head -n 1
-wavpack --version | head -n 1
-mp3splt -v | head -n 1
-mp3gain -v 2>&1 | head -n 1
-lame --version | head -n 1
-twolame --help 2>&1 | head -n 1 || true
-faad --help 2>&1 | head -n 1 || true
-mpcdec -h 2>&1 | head -n 1
+ccextractor --version 2>&1 | sed -n '1p' || true
+sacd_extract --help | sed -n '1p'
+shnsplit -v 2>&1 | sed -n '1p'
+cuetag 2>&1 | sed -n '1p'
+cueprint --version | sed -n '1p'
+wavpack --version | sed -n '1p'
+mp3splt -v | sed -n '1p'
+mp3gain -v 2>&1 | sed -n '1p'
+lame --version | sed -n '1p'
+twolame --help 2>&1 | sed -n '1p' || true
+faad --help 2>&1 | sed -n '1p' || true
+mpcdec -h 2>&1 | sed -n '1p'
 MP4Box -version > /tmp/mp4box-version.out 2>&1
 head -n 2 /tmp/mp4box-version.out
 rm -f /tmp/mp4box-version.out
 rm -rf /root/.gpac
-dvdbackup --version | head -n 1
-lsdvd --version 2>&1 | head -n 1 || true
-vobcopy -v 2>&1 | head -n 1 || true
-abcde -v | head -n 1
-cdparanoia -V 2>&1 | head -n 1 || true
-rsgain --version | head -n 1
-vorbisgain --version | head -n 1
+dvdbackup --version | sed -n '1p'
+lsdvd --version 2>&1 | sed -n '1p' || true
+vobcopy -v 2>&1 | sed -n '1p' || true
+abcde -v | sed -n '1p'
+cdparanoia -V 2>&1 | sed -n '1p' || true
+rsgain --version | sed -n '1p'
+vorbisgain --version | sed -n '1p'
 
 echo "- Database clients:"
 need psql mysql redis-cli mongosh duckdb usql clickhouse clickhouse-client clickhouse-local
@@ -179,22 +229,22 @@ clickhouse local --version
 echo "- Documents, OCR, and encoding tools:"
 need pandoc pdftotext pdfinfo tesseract ocrmypdf antiword catdoc odt2txt unrtf \
   xlsx2csv csvcut uchardet enca nkf iconv dos2unix convmv detox recode
-pandoc --version | head -n 1
-pdftotext -v 2>&1 | head -n 1
-pdfinfo -v 2>&1 | head -n 1
-tesseract --version | head -n 1
+pandoc --version | sed -n '1p'
+pdftotext -v 2>&1 | sed -n '1p'
+pdfinfo -v 2>&1 | sed -n '1p'
+tesseract --version | sed -n '1p'
 ocrmypdf --version
-antiword -h 2>&1 | head -n 1 || true
-catdoc -V 2>&1 | head -n 1
+antiword -h 2>&1 | sed -n '1p' || true
+catdoc -V 2>&1 | sed -n '1p'
 odt2txt --version
-unrtf --version | head -n 1
+unrtf --version | sed -n '1p'
 xlsx2csv --version
 csvcut --version
 uchardet --version
-enca --version | head -n 1
-nkf --version | head -n 1
-iconv --version | head -n 1
-dos2unix --version | head -n 1
-convmv 2>&1 | head -n 1 || true
+enca --version | sed -n '1p'
+nkf --version | sed -n '1p'
+iconv --version | sed -n '1p'
+dos2unix --version | sed -n '1p'
+convmv 2>&1 | sed -n '1p' || true
 
 echo "Slim toolbox detected successfully."

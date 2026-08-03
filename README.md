@@ -73,7 +73,7 @@ The slim image includes the AI CLIs plus tools for:
 
 - AI agents: `codex`, `claude`, `gemini`, `agy`
 - Container and cloud clients: `docker`, `docker compose`, `aws`, `az`, `gcloud`, `kubectl`, and `helm`
-- Headless browsers and scraping: `playwright`, `fetch-page`, `chromium`, `firefox`, and `webkit`
+- Headless browsers and agents: `browser-use`, `playwright`, `fetch-page`, `chromium`, `firefox`, and `webkit`
 - Search and inspection: `rg`, `rga`, `fd`, `fzf`, `plocate`, `tree`, `file`, `bat`, `delta`
 - NAS and sync: `rclone`, `rsync`, `smbclient`, `cifs-utils`, `nfs-common`
 - Disk and duplicate cleanup: `smartctl`, `hdparm`, `parted`, `sgdisk`, `testdisk`, `ncdu`, `duf`, `czkawka_cli`, `jdupes`, `fdupes`, `rdfind`, `rmlint`, `duperemove`
@@ -106,6 +106,35 @@ Fetch rendered page content from sites that need a browser-like environment:
 fetch-page "https://metalstorm.net/bands/albums_top.php?album_style=Progressive"
 fetch-page --selector 'xpath=//span[contains(@class,"megatitle")]/following-sibling::div[contains(@class,"cbox")][1]//table' \
     "https://metalstorm.net/bands/albums_top.php?album_style=Progressive"
+```
+
+Use Browser Use for multi-step browser work such as navigation, clicking,
+forms, login, and pagination. It starts the image's Playwright Chromium only
+when needed and connects through loopback CDP; it does not download a second
+browser:
+
+```sh
+browser-use <<'PY'
+new_tab("https://example.com")
+print(page_info())
+PY
+```
+
+Set `BU_CDP_URL` or `BU_CDP_WS` to use an existing browser. Browser Use Cloud
+is optional and uses its normal `BROWSER_USE_API_KEY` configuration. On every
+container startup, the image refreshes Browser Use's official Codex, Claude,
+and Gemini skills with `--no-install --force`; unrelated skills are not scanned
+or overwritten.
+
+Mount a persistent directory at `/root` to retain AI CLI sessions, credentials,
+skills, and the Browser Use Chromium profile across container restarts:
+
+```sh
+docker run --rm -it \
+    -v "/path/to/agent-home:/root" \
+    -v "/path/to/files:/data" \
+    -w /data \
+    docker.io/gptbasesparticle/codex-universal:slim
 ```
 
 ## AI CLI Headless Commands

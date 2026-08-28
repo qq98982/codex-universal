@@ -31,10 +31,12 @@ bat --version
 delta --version
 
 echo "- AI CLIs:"
-need node npm codex claude gemini agy antigravity
+need node npm codex codex-code-mode-host claude gemini agy antigravity
 node --version
 npm --version
 codex --version
+codex-code-mode-host --help >/dev/null
+timeout 5 codex-code-mode-host </dev/null
 claude --version
 gemini --version
 agy --version

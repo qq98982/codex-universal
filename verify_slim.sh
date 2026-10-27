@@ -3,6 +3,7 @@
 set -euo pipefail
 
 echo "Verifying slim AI agent toolbox ..."
+python3 /opt/codex/test_ca_bundles.py
 
 need() {
   local cmd

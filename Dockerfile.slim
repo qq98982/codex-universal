@@ -168,7 +168,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 ### PYTHON CLI HELPERS ###
 
-ARG UV_VERSION=0.12.23
+ARG UV_VERSION=0.13.6
 ARG FFSUBSYNC_VERSION=0.5.1
 
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -180,10 +180,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 ### NODE ###
 
-ARG NODE_VERSION=24.21.0
-ARG NODE_SHA256_AMD64=fd8e59d5a511510f6a298afb548f18c7d2b1be404d8b4a27d94fbe49f56cb2d6
-ARG NODE_SHA256_ARM64=6ad1325edbdb5649c379b75a237147a666c95d4f9ae8d340fef2d1575d289ad2
-ARG NPM_VERSION=12.2.0
+ARG NODE_VERSION=24.22.1
+ARG NODE_SHA256_AMD64=6c172a9ab6718f7b801fb5a7bd486af2ee5e32758086a04b84fcce2aa77095e6
+ARG NODE_SHA256_ARM64=dbabf7a1cbf947e6059ffad2c27b80041db97dea1e553b62afdee7f13fca336e
+ARG NPM_VERSION=12.2.1
 
 RUN --mount=type=cache,target=/root/.npm \
     set -e; \
@@ -204,7 +204,7 @@ RUN --mount=type=cache,target=/root/.npm \
 
 ### HEADLESS BROWSERS ###
 
-ARG PLAYWRIGHT_VERSION=1.63.0
+ARG PLAYWRIGHT_VERSION=1.64.1
 
 COPY playwright-browser fetch-page /usr/local/bin/
 
@@ -263,21 +263,21 @@ RUN set -e; \
 
 ### DATABASE, AUDIO, VIDEO, AND SUBTITLE CLIS ###
 
-ARG MONGOSH_VERSION=2.12.0
+ARG MONGOSH_VERSION=2.14.0
 
-ARG DUCKDB_VERSION=1.5.6
-ARG DUCKDB_SHA256_AMD64=cce2687a38681db644c248198b99ecd86170ff47e324c5f33e50c0042f142839
-ARG DUCKDB_SHA256_ARM64=1af0541e649a3ae34eb20eec2ca564308bf0e8993e5d6dba6be77bfb289a2718
+ARG DUCKDB_VERSION=2.0.0
+ARG DUCKDB_SHA256_AMD64=c6507206baf7793c6013dbd82368469a45f20dc0e17a6f92f204602f652ed2bc
+ARG DUCKDB_SHA256_ARM64=859e1875d2a9515fbb4bf8871061437a14af82320da68c753f094c4b776348fe
 
 ARG USQL_VERSION=0.21.6
 ARG USQL_SHA256_AMD64=046b25a4ce8d16b200d38a47e85c45c5eb694eb5ae071a21436d39fe08a897bc
 ARG USQL_SHA256_ARM64=19415f69089431e31e96a9f17e38c7611375c8552efb9f095aaf733860172116
 
-ARG CLICKHOUSE_VERSION=26.9.10.4
-ARG CLICKHOUSE_COMMON_SHA512_AMD64=19eaa59d414389925fcb022c6ed7752f997581d405b9fb42b1611716ceaa94e3b173a41a64fe089a92a3f2a633003ddf12f5e75727c9c1725d5040d91df5a8b6
-ARG CLICKHOUSE_COMMON_SHA512_ARM64=4acfa769a3be82a0f6315e3cb8736ba330fb9f6d25b1c3a703c030cc791a010750c56475b5e11f8a9e76ba88e4b42a7bd6556f439aaa3675cd83d25e8f17366c
-ARG CLICKHOUSE_CLIENT_SHA512_AMD64=3c0e3a82e03cd5d828999e73652eac8faf5ab0e1c40248f5c59e8746ae3a954dae7937e8d334e46e20607f2b384957c74be65d10e912d4bd082d343cbef1905e
-ARG CLICKHOUSE_CLIENT_SHA512_ARM64=ecf75a5aff9a422680747ba02c966042978b316b3c5eb4370fadc67f4f8c4cf95cbfedd7390b9254e6aeb2a7f4261eda7899dd3cf728fd7f2f17a1a80520aa4b
+ARG CLICKHOUSE_VERSION=26.10.2.103
+ARG CLICKHOUSE_COMMON_SHA512_AMD64=e892b6d0b75d8420a48ab3d0f1ab7f4cd145bcfe364ef8d068354b5c3f8c9b6f168ce2ee7696dc5537509ba3406ba6bac6b7144a09e45213d612296d03b74da7
+ARG CLICKHOUSE_COMMON_SHA512_ARM64=92f885659d92334564e9374e53ff24da4861b24904f2b77436da162dce2f0a15ed1a976fa260bdf4d1584b8be00a3fea0d476177b1cefce75de88ccc2dcfabd9
+ARG CLICKHOUSE_CLIENT_SHA512_AMD64=23a27e9806a9661e794bec2c25d4826a2b975ea6e17424ddd26a135d380c006d2bfe8cf7a63d84560269385bfac34f5564160bc92c41637c2535264e9ce90131
+ARG CLICKHOUSE_CLIENT_SHA512_ARM64=2811f310ed7a98f7de7597a229ccfba882a2b037d361d0bfa50d7b524bbfcd0e20c337ea19aebfe1d4600f12518c512374f60d4cb81902f01871797011e5ed6b
 
 ARG SACD_RIPPER_COMMIT=a3d981c935c3224217e2842cd492f9351106c81e
 ARG SACD_RIPPER_SHA256=db903b03d28a03282020a76bc7b6e146bb51969ddcac2bc855096b5363379677
@@ -332,11 +332,11 @@ RUN --mount=type=cache,target=/root/.npm \
       arm64) duckdb_arch="arm64"; duckdb_sha256="$DUCKDB_SHA256_ARM64"; usql_arch="arm64"; usql_sha256="$USQL_SHA256_ARM64"; clickhouse_arch="arm64"; clickhouse_common_sha512="$CLICKHOUSE_COMMON_SHA512_ARM64"; clickhouse_client_sha512="$CLICKHOUSE_CLIENT_SHA512_ARM64" ;; \
       *) echo "Unsupported database/media CLI architecture: $TARGETARCH" >&2; exit 1 ;; \
     esac; \
-    curl -fsSL "https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/duckdb_cli-linux-${duckdb_arch}.gz" -o /tmp/duckdb.gz; \
-    echo "${duckdb_sha256}  /tmp/duckdb.gz" | sha256sum -c -; \
-    gunzip -c /tmp/duckdb.gz > /usr/local/bin/duckdb; \
+    curl -fsSL "https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/duckdb-cli-linux-${duckdb_arch}.tar.gz" -o /tmp/duckdb.tar.gz; \
+    echo "${duckdb_sha256}  /tmp/duckdb.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/duckdb.tar.gz -C /usr/local/bin duckdb; \
     chmod 0755 /usr/local/bin/duckdb; \
-    rm -f /tmp/duckdb.gz; \
+    rm -f /tmp/duckdb.tar.gz; \
     curl -fsSL "https://github.com/xo/usql/releases/download/v${USQL_VERSION}/usql_static-${USQL_VERSION}-linux-${usql_arch}.tar.bz2" -o /tmp/usql.tar.bz2; \
     echo "${usql_sha256}  /tmp/usql.tar.bz2" | sha256sum -c -; \
     tar -xjf /tmp/usql.tar.bz2 -C /tmp usql_static; \
@@ -365,14 +365,14 @@ RUN --mount=type=cache,target=/root/.npm \
 
 ### CONTAINER AND CLOUD CLIENT TOOLS ###
 
-ARG DOCKER_CE_CLI_VERSION=5:29.8.2-1~ubuntu.24.04~noble
-ARG DOCKER_BUILDX_PLUGIN_VERSION=0.37.1-1~ubuntu.24.04~noble
-ARG DOCKER_COMPOSE_PLUGIN_VERSION=5.6.0-1~ubuntu.24.04~noble
-ARG AWS_CLI_VERSION=2.37.9
-ARG AZURE_CLI_VERSION=2.90.0-1~noble
-ARG GOOGLE_CLOUD_CLI_VERSION=587.0.0-0
+ARG DOCKER_CE_CLI_VERSION=5:29.9.2-1~ubuntu.24.04~noble
+ARG DOCKER_BUILDX_PLUGIN_VERSION=0.38.1-1~ubuntu.24.04~noble
+ARG DOCKER_COMPOSE_PLUGIN_VERSION=5.6.1-1~ubuntu.24.04~noble
+ARG AWS_CLI_VERSION=2.38.6
+ARG AZURE_CLI_VERSION=2.91.0-1~noble
+ARG GOOGLE_CLOUD_CLI_VERSION=590.0.1-0
 ARG KUBECTL_VERSION=v1.37.1
-ARG HELM_VERSION=4.3.0
+ARG HELM_VERSION=4.3.1
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -434,7 +434,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 ### BROWSER AGENT CLI ###
 
-ARG BROWSER_USE_VERSION=0.13.10
+ARG BROWSER_USE_VERSION=0.13.14
 
 COPY --chmod=0755 browser-use-local /usr/local/bin/browser-use
 COPY --chmod=0755 refresh-browser-use-skills /opt/codex/refresh-browser-use-skills
@@ -454,17 +454,17 @@ RUN chmod +x /opt/codex/setup_slim.sh
 
 ### AI CLIS ###
 
-ARG CLAUDE_CODE_VERSION=2.1.289
-ARG GEMINI_CLI_VERSION=0.62.0
+ARG CLAUDE_CODE_VERSION=2.1.311
+ARG GEMINI_CLI_VERSION=0.65.0
 ARG CODEX_CLI_VERSION=0.164.0
 ARG CODEX_PACKAGE_SHA256_AMD64=3ec55053109608d5038f7e50750f7d25f768dfd740fef071aa710e2559b63aac
 ARG CODEX_PACKAGE_SHA256_ARM64=5918add6c7e9cf1e14a9af1b4c0f4bf1d24a43903faac26df5dc4c019ea91bd5
 
-ARG ANTIGRAVITY_CLI_VERSION=1.2.16
-ARG ANTIGRAVITY_CLI_URL_AMD64=https://github.com/google-antigravity/antigravity-cli/releases/download/1.2.16/agy_cli_linux_x64.tar.gz
-ARG ANTIGRAVITY_CLI_SHA256_AMD64=d4247430e04cebdbe1ca93d9ccb483cd2f3daeb4cdb0ace5a71cd130e0bdab84
-ARG ANTIGRAVITY_CLI_URL_ARM64=https://github.com/google-antigravity/antigravity-cli/releases/download/1.2.16/agy_cli_linux_arm64.tar.gz
-ARG ANTIGRAVITY_CLI_SHA256_ARM64=a6d269d2764e5636ab2bcda73b78c587fe9d00ead767aa3974574229585ee0d3
+ARG ANTIGRAVITY_CLI_VERSION=1.4.7
+ARG ANTIGRAVITY_CLI_URL_AMD64=https://github.com/google-antigravity/antigravity-cli/releases/download/1.4.7/agy_cli_linux_x64.tar.gz
+ARG ANTIGRAVITY_CLI_SHA256_AMD64=67fd4e70be739b1f8b18f90b511da8cd2a7aef24e888e5837402e025bf7fdbfc
+ARG ANTIGRAVITY_CLI_URL_ARM64=https://github.com/google-antigravity/antigravity-cli/releases/download/1.4.7/agy_cli_linux_arm64.tar.gz
+ARG ANTIGRAVITY_CLI_SHA256_ARM64=b273c791b7647f680598fa1dbdf9c8086bdc42374b2276fa70e900bf8120e1d5
 
 RUN --mount=type=cache,target=/root/.npm \
     --mount=type=cache,target=/var/cache/apt,sharing=locked \

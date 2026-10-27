@@ -37,6 +37,7 @@ npm --version
 codex --version
 codex-code-mode-host --help >/dev/null
 timeout 5 codex-code-mode-host </dev/null
+/opt/codex/test_codex_package.sh
 claude --version
 gemini --version
 agy --version
